@@ -21,6 +21,9 @@ public static class AppState
 
     private static DispatcherQueueTimer? _saveTimer;
 
+    /// <summary>False in benchmark mode: nothing it does (position, tabs) should overwrite the user's state.</summary>
+    public static bool PersistenceEnabled { get; set; } = true;
+
     /// <summary>Raised on the UI thread when <see cref="NightMode"/> changes.</summary>
     public static event Action? NightModeChanged;
 
@@ -40,6 +43,7 @@ public static class AppState
     /// <summary>Schedules a save (at most one every couple of seconds). Call on the UI thread.</summary>
     public static void RequestSave()
     {
+        if (!PersistenceEnabled) return;
         if (_saveTimer is null)
         {
             _saveTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
@@ -53,6 +57,7 @@ public static class AppState
     public static void SaveNow()
     {
         _saveTimer?.Stop();
+        if (!PersistenceEnabled) return;
         Saving?.Invoke();
         Store.Save();
     }

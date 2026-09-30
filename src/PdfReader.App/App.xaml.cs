@@ -26,6 +26,7 @@ public partial class App : Application
         var arguments = Environment.GetCommandLineArgs().Skip(1).ToList();
         if (arguments.Contains("--bench") && CommandLine.Files(arguments, File.Exists).FirstOrDefault() is { } benchFile)
         {
+            Services.AppState.PersistenceEnabled = false;
             _ = RunBenchmarkAsync(_window, benchFile);
             return;
         }
