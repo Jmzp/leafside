@@ -1,0 +1,121 @@
+<UserControl
+    x:Class="PdfReader.App.Controls.DocumentView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:PdfReader.App.Controls">
+
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Modifiers="Control" Key="F" Invoked="OnFindAccelerator" />
+        <KeyboardAccelerator Key="F3" Invoked="OnNextMatchAccelerator" />
+        <KeyboardAccelerator Modifiers="Shift" Key="F3" Invoked="OnPreviousMatchAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="Add" Invoked="OnZoomInAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="Subtract" Invoked="OnZoomOutAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="Number0" Invoked="OnFitWidthAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="G" Invoked="OnGoToPageAccelerator" />
+    </UserControl.KeyboardAccelerators>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Grid Padding="8,4" ColumnSpacing="4" Background="{ThemeResource LayerFillColorDefaultBrush}"
+              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <ToggleButton x:Name="SidebarToggle" IsChecked="True" ToolTipService.ToolTip="Panel lateral"
+                              Checked="OnSidebarToggled" Unchecked="OnSidebarToggled" Padding="8,6">
+                    <FontIcon Glyph="&#xE700;" FontSize="16" />
+                </ToggleButton>
+                <AppBarSeparator />
+                <TextBox x:Name="PageBox" Width="64" TextAlignment="Center" KeyDown="OnPageBoxKeyDown"
+                         LostFocus="OnPageBoxLostFocus" ToolTipService.ToolTip="Ir a la página (Ctrl+G)" />
+                <TextBlock x:Name="PageCountText" VerticalAlignment="Center" Margin="4,0,8,0" />
+                <AppBarSeparator />
+                <Button Click="OnZoomOut" ToolTipService.ToolTip="Alejar (Ctrl+-)" Padding="8,6">
+                    <FontIcon Glyph="&#xE71F;" FontSize="16" />
+                </Button>
+                <TextBlock x:Name="ZoomText" Width="52" TextAlignment="Center" VerticalAlignment="Center" />
+                <Button Click="OnZoomIn" ToolTipService.ToolTip="Acercar (Ctrl++)" Padding="8,6">
+                    <FontIcon Glyph="&#xE8A3;" FontSize="16" />
+                </Button>
+                <Button Click="OnFitWidth" ToolTipService.ToolTip="Ajustar al ancho (Ctrl+0)" Padding="8,6">
+                    <FontIcon Glyph="&#xE9A6;" FontSize="16" />
+                </Button>
+                <Button Click="OnFitPage" ToolTipService.ToolTip="Página completa" Padding="8,6">
+                    <FontIcon Glyph="&#xE9A8;" FontSize="16" />
+                </Button>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                <AutoSuggestBox x:Name="SearchBox" Width="240" PlaceholderText="Buscar (Ctrl+F)" QueryIcon="Find"
+                                QuerySubmitted="OnSearchSubmitted" TextChanged="OnSearchTextChanged" />
+                <TextBlock x:Name="SearchResultText" VerticalAlignment="Center" MinWidth="64" TextAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Button Click="OnPreviousMatch" ToolTipService.ToolTip="Anterior (Mayús+F3)" Padding="8,6">
+                    <FontIcon Glyph="&#xE70E;" FontSize="14" />
+                </Button>
+                <Button Click="OnNextMatch" ToolTipService.ToolTip="Siguiente (F3)" Padding="8,6">
+                    <FontIcon Glyph="&#xE70D;" FontSize="14" />
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Sidebar + viewer -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="SidebarColumn" Width="200" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid x:Name="Sidebar" Background="{ThemeResource LayerFillColorDefaultBrush}"
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <SelectorBar x:Name="SidebarSelector" SelectionChanged="OnSidebarSelectionChanged">
+                    <SelectorBarItem x:Name="ThumbnailsTab" Text="Miniaturas" IsSelected="True" />
+                    <SelectorBarItem x:Name="OutlineTab" Text="Índice" />
+                </SelectorBar>
+
+                <ListView x:Name="ThumbnailList" Grid.Row="1" SelectionMode="Single" Padding="0,4"
+                          ContainerContentChanging="OnThumbnailContainerContentChanging"
+                          ItemClick="OnThumbnailClicked" IsItemClickEnabled="True">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:ThumbnailItem">
+                            <StackPanel Padding="0,8" Spacing="4" HorizontalAlignment="Center">
+                                <local:ThumbnailView />
+                                <TextBlock Text="{x:Bind Label}" HorizontalAlignment="Center"
+                                           Style="{ThemeResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+
+                <Grid x:Name="OutlinePane" Grid.Row="1" Visibility="Collapsed">
+                    <TreeView x:Name="OutlineTree" ItemInvoked="OnOutlineItemInvoked" SelectionMode="None" />
+                    <TextBlock x:Name="NoOutlineText" Text="Este documento no tiene índice." Margin="16"
+                               TextWrapping="Wrap" Visibility="Collapsed"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Column="1" Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}">
+                <local:PdfViewer x:Name="Viewer" />
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

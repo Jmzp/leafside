@@ -1,0 +1,27 @@
+<Window
+    x:Class="PdfReader.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Lector PDF">
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid x:Name="Root" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Modifiers="Control" Key="O" Invoked="OnOpenAccelerator" />
+            <KeyboardAccelerator Modifiers="Control" Key="W" Invoked="OnCloseTabAccelerator" />
+        </Grid.KeyboardAccelerators>
+
+        <TabView x:Name="Tabs" AddTabButtonClick="OnAddTabClick" TabCloseRequested="OnTabCloseRequested"
+                 SelectionChanged="OnTabSelectionChanged" TabWidthMode="SizeToContent" />
+
+        <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+            <FontIcon Glyph="&#xEA90;" FontSize="64" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="Abre un PDF para empezar" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
+            <TextBlock Text="También puedes arrastrar archivos a esta ventana." HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button Content="Abrir PDF… (Ctrl+O)" Style="{ThemeResource AccentButtonStyle}" HorizontalAlignment="Center" Click="OnOpenClick" />
+        </StackPanel>
+    </Grid>
+</Window>
