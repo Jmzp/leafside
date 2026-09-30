@@ -94,6 +94,8 @@ python tests/assets/make_sample.py                            # heavy 300-page t
 - **Printing** uses `PrintDlgEx` plus `FPDF_RenderPage` on the printer HDC. On Windows 11,
   `PrintDlgEx` shows the modern dialog in a separate `PrintDialog.exe` window hosted by
   ApplicationFrameHost. It is modal but pumps messages, so guard against re-entrancy (`_printBusy`).
+- **Keep the clone path short.** MakePri (resource indexing) fails with `PRI175 ... 0x80070003` when paths under
+  `obj\` exceed 260 characters, which happens in deeply nested temp folders.
 - **Registry:** the app registers itself under `HKCU\Software\Classes` at startup (only when the exe
   path changes). Running dev builds does this too; `PdfReader.exe --unregister` cleans up.
 - **User state:** `%LocalAppData%\PdfReader\state.json`. Back it up before manual tests that open
