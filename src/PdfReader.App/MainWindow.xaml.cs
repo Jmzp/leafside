@@ -23,6 +23,8 @@ public sealed partial class MainWindow : Window
 
     private readonly DispatcherQueueTimer _exitButtonTimer;
     private bool _closing;
+    // Closing the window waits for the user to decide about unsaved highlights and notes.
+    private bool _closeConfirmed, _confirmingClose;
 
     public MainWindow()
     {
@@ -41,6 +43,8 @@ public sealed partial class MainWindow : Window
         {
             foreach (var view in DocumentViews()) view.SaveViewState();
         };
+        AppWindow.Closing += OnAppWindowClosing;
+        InitializeUpdates();
         Closed += (_, _) =>
         {
             _closing = true;
@@ -71,6 +75,7 @@ public sealed partial class MainWindow : Window
         foreach (var path in files)
             await OpenFileAsync(path);
         UpdateSession();
+        _ = CheckForUpdatesAsync(manual: false);
     }
 
     public Task OpenFileAsync(string path) => OpenFileAsync(path, interactive: true);
@@ -141,14 +146,42 @@ public sealed partial class MainWindow : Window
             IconSource = new FontIconSource { Glyph = "" },
         };
         ToolTipService.SetToolTip(tab, document.FilePath);
+        view.DocumentStateChanged += (_, _) =>
+        {
+            // Unsaved changes get a dot; after Save as the tab shows the new file.
+            tab.Header = view.IsDirty ? $"• {view.Title}" : view.Title;
+            ToolTipService.SetToolTip(tab, view.Document.FilePath);
+            if (view == SelectedView) UpdateEmptyState();
+            UpdateSession();
+        };
         DocumentHost.Children.Add(view);
         Tabs.TabItems.Add(tab);
         if (select || Tabs.TabItems.Count == 1) Tabs.SelectedItem = tab;
         UpdateEmptyState();
     }
 
+    private async Task CloseTabAsync(TabViewItem tab)
+    {
+        if (tab.Tag is DocumentView { IsDirty: true } dirty)
+        {
+            Tabs.SelectedItem = tab;
+            if (_confirmingClose) return;
+            _confirmingClose = true;
+            try
+            {
+                if (!await dirty.ConfirmCloseAsync()) return;
+            }
+            finally
+            {
+                _confirmingClose = false;
+            }
+        }
+        CloseTab(tab);
+    }
+
     private void CloseTab(TabViewItem tab)
     {
+        if (!Tabs.TabItems.Contains(tab)) return;
         if (tab.Tag is DocumentView view)
         {
             view.Close();
@@ -172,7 +205,9 @@ public sealed partial class MainWindow : Window
             view.Visibility = view == selected ? Visibility.Visible : Visibility.Collapsed;
             view.IsEnabled = view == selected;
         }
-        Title = selected is not null ? Loc.Format("WindowTitle", selected.Title) : Loc.Get("AppName");
+        Title = selected is not null
+            ? Loc.Format("WindowTitle", selected.IsDirty ? $"• {selected.Title}" : selected.Title)
+            : Loc.Get("AppName");
     }
 
     /// <summary>Keeps the list of open tabs in the saved state, so the next launch can restore them.</summary>
@@ -241,6 +276,38 @@ public sealed partial class MainWindow : Window
     private void OnDefaultAppClick(object sender, RoutedEventArgs e) =>
         _ = Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:defaultapps"));
 
+    /// <summary>Before the window closes, asks about every document with unsaved highlights or notes.</summary>
+    private async void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_closeConfirmed || !DocumentViews().Any(v => v.IsDirty)) return;
+        args.Cancel = true;
+        if (!await ConfirmCloseAllAsync()) return;
+        _closeConfirmed = true;
+        Close();
+    }
+
+    /// <summary>Asks about each document with unsaved changes (save, discard or cancel); false if cancelled.</summary>
+    private async Task<bool> ConfirmCloseAllAsync()
+    {
+        if (_confirmingClose) return false;
+        _confirmingClose = true;
+        try
+        {
+            if (IsFullScreen) SetFullScreen(false);
+            foreach (var tab in Tabs.TabItems.OfType<TabViewItem>().ToList())
+            {
+                if (tab.Tag is not DocumentView { IsDirty: true } view) continue;
+                Tabs.SelectedItem = tab;
+                if (!await view.ConfirmCloseAsync()) return false;
+            }
+            return true;
+        }
+        finally
+        {
+            _confirmingClose = false;
+        }
+    }
+
     // --- full screen
 
     private bool IsFullScreen => AppWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen;
@@ -250,6 +317,7 @@ public sealed partial class MainWindow : Window
         if (on == IsFullScreen || (on && SelectedView is null)) return;
         AppWindow.SetPresenter(on ? AppWindowPresenterKind.FullScreen : AppWindowPresenterKind.Default);
         Tabs.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        UpdateBar.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
         foreach (var view in DocumentViews()) view.IsChromeVisible = !on;
         if (on) ShowExitFullScreenButton();
         else
@@ -341,7 +409,7 @@ public sealed partial class MainWindow : Window
 
     private void OnOpenClick(object sender, RoutedEventArgs e) => _ = PickAndOpenAsync();
     private void OnAddTabClick(TabView sender, object args) => _ = PickAndOpenAsync();
-    private void OnTabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => CloseTab(args.Tab);
+    private void OnTabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args) => _ = CloseTabAsync(args.Tab);
 
     private void OnTabSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -362,7 +430,7 @@ public sealed partial class MainWindow : Window
     private void OnCloseTabAccelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
         args.Handled = true;
-        if (Tabs.SelectedItem is TabViewItem tab) CloseTab(tab);
+        if (Tabs.SelectedItem is TabViewItem tab) _ = CloseTabAsync(tab);
     }
 
     private void OnDragOver(object sender, DragEventArgs e)

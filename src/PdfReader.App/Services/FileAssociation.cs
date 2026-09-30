@@ -10,18 +10,19 @@ namespace PdfReader.App.Services;
 /// </summary>
 public static partial class FileAssociation
 {
-    private const string ProgId = "PdfReader.Document";
-    /// <summary>ProgID used by the first test builds; removed when found.</summary>
-    private const string LegacyProgId = "LectorPDF.Document";
-    private const string AppKey = @"Applications\PdfReader.exe";
+    private const string ProgId = "LeafSide.Document";
+    private const string AppKey = @"Applications\LeafSide.exe";
+    /// <summary>What earlier versions (named "PDF Reader") registered; removed when found.</summary>
+    private static readonly string[] LegacyProgIds = ["LectorPDF.Document", "PdfReader.Document"];
+    private const string LegacyAppKey = @"Applications\PdfReader.exe";
     private const string ClassesKey = @"Software\Classes";
 
     public static void Register()
     {
-        string exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PdfReader.exe");
+        string exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "LeafSide.exe");
         string command = $"\"{exe}\" \"%1\"";
         using var classes = Registry.CurrentUser.CreateSubKey(ClassesKey);
-        RemoveProgId(classes, LegacyProgId);
+        RemoveLegacy(classes);
         using (var existing = classes.OpenSubKey($@"{ProgId}\shell\open\command"))
         {
             if (existing?.GetValue("") as string == command) return; // up to date: touch nothing
@@ -45,15 +46,21 @@ public static partial class FileAssociation
         NotifyShell();
     }
 
-    /// <summary>Removes everything <see cref="Register"/> wrote (PdfReader.exe --unregister).</summary>
+    /// <summary>Removes everything <see cref="Register"/> wrote (LeafSide.exe --unregister).</summary>
     public static void Unregister()
     {
         using var classes = Registry.CurrentUser.OpenSubKey(ClassesKey, writable: true);
         if (classes is null) return;
         RemoveProgId(classes, ProgId);
-        RemoveProgId(classes, LegacyProgId);
+        RemoveLegacy(classes);
         classes.DeleteSubKeyTree(AppKey, throwOnMissingSubKey: false);
         NotifyShell();
+    }
+
+    private static void RemoveLegacy(RegistryKey classes)
+    {
+        foreach (var progId in LegacyProgIds) RemoveProgId(classes, progId);
+        classes.DeleteSubKeyTree(LegacyAppKey, throwOnMissingSubKey: false);
     }
 
     private static void RemoveProgId(RegistryKey classes, string progId)

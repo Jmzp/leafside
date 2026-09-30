@@ -2,10 +2,15 @@ using System.Text;
 
 namespace PdfReader.Core.Tests;
 
-/// <summary>Writes small, valid PDFs for tests: one line of Helvetica text per page, an outline and an internal link.</summary>
+/// <summary>
+/// Writes small, valid PDFs for tests: one line of Helvetica text per page, an outline and an internal link.
+/// <paramref name="firstPageAnnotation"/> is the dictionary of an extra annotation on the first page
+/// (as another program would have written it).
+/// </summary>
 internal static class TestPdf
 {
-    public static string Create(IReadOnlyList<string> pageTexts, double width = 612, double height = 792, int rotate = 0)
+    public static string Create(IReadOnlyList<string> pageTexts, double width = 612, double height = 792, int rotate = 0,
+        string? firstPageAnnotation = null)
     {
         int n = pageTexts.Count;
         // Object numbers: 1 catalog, 2 pages, 3 font, 4 outlines, then per page: page, content, outline item.
@@ -13,6 +18,7 @@ internal static class TestPdf
         int ContentObj(int i) => 6 + i * 3;
         int OutlineObj(int i) => 7 + i * 3;
         int linkObj = 5 + n * 3;
+        int extraObj = linkObj + 1;
 
         var objects = new SortedDictionary<int, string>
         {
@@ -23,7 +29,10 @@ internal static class TestPdf
         };
         for (int i = 0; i < n; i++)
         {
-            string annots = i == 0 && n > 1 ? $" /Annots [{linkObj} 0 R]" : "";
+            var pageAnnots = new List<string>();
+            if (i == 0 && n > 1) pageAnnots.Add($"{linkObj} 0 R");
+            if (i == 0 && firstPageAnnotation is not null) pageAnnots.Add($"{extraObj} 0 R");
+            string annots = pageAnnots.Count > 0 ? $" /Annots [{string.Join(" ", pageAnnots)}]" : "";
             objects[PageObj(i)] = $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {width} {height}] /Rotate {rotate} " +
                                   $"/Resources << /Font << /F1 3 0 R >> >> /Contents {ContentObj(i)} 0 R{annots} >>";
             string stream = $"BT /F1 24 Tf 72 {height - 100} Td ({pageTexts[i]}) Tj ET";
@@ -34,6 +43,9 @@ internal static class TestPdf
         }
         if (n > 1)
             objects[linkObj] = $"<< /Type /Annot /Subtype /Link /Rect [0 0 100 100] /Border [0 0 0] /Dest [{PageObj(n - 1)} 0 R /Fit] >>";
+        else if (firstPageAnnotation is not null)
+            objects[linkObj] = "<< >>"; // keeps object numbers contiguous
+        if (firstPageAnnotation is not null) objects[extraObj] = firstPageAnnotation;
 
         var sb = new StringBuilder("%PDF-1.7\n");
         var offsets = new Dictionary<int, int>();

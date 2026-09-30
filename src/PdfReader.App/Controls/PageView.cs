@@ -54,12 +54,18 @@ public sealed class PageView : Grid
     {
         _compositor = compositor;
         Background = DayBackground;
-        BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 0, 0, 0));
-        BorderThickness = new Thickness(0.5);
 
+        // The page's pixels start exactly at its top-left corner. (A border on this Grid would inset them by half a
+        // DIP, i.e. a fraction of a screen pixel, which blurs every page.) The outline is drawn on top instead.
         var host = new Border();
         Children.Add(host);
         Children.Add(_overlay);
+        Children.Add(new Border
+        {
+            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 0, 0, 0)),
+            BorderThickness = new Thickness(0.5),
+            IsHitTestVisible = false,
+        });
 
         _root = compositor.CreateContainerVisual();
         _base = compositor.CreateSpriteVisual();
@@ -132,6 +138,9 @@ public sealed class PageView : Grid
         double dipPerPixel = DocumentLayout.PointsToDip / scale;
         var brush = _compositor.CreateSurfaceBrush(surface);
         brush.Stretch = CompositionStretch.Fill;
+        // The bitmap was rendered at exactly one pixel per screen pixel; without snapping, a page that lands between
+        // pixels (centering, scroll offsets) is resampled and every glyph gets soft.
+        brush.SnapToPixels = true;
         var sprite = _compositor.CreateSpriteVisual();
         sprite.Brush = brush;
         if (tile.Column < 0)

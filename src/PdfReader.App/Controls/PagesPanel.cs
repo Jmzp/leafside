@@ -19,6 +19,9 @@ public sealed class PagesPanel : Panel
         ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.IBeam);
     }
 
+    /// <summary>I-beam for selecting text; a cross while placing a note.</summary>
+    public void SetCursor(InputSystemCursorShape shape) => ProtectedCursor = InputSystemCursor.Create(shape);
+
     public DocumentLayout? Layout
     {
         get => _layout;

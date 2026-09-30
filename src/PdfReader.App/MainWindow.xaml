@@ -10,6 +10,7 @@
     <Grid x:Name="Root" AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.KeyboardAccelerators>
@@ -25,11 +26,28 @@
                  SelectionChanged="OnTabSelectionChanged" TabItemsChanged="OnTabItemsChanged"
                  TabWidthMode="SizeToContent" VerticalAlignment="Top" />
 
-        <Grid x:Name="DocumentHost" Grid.Row="1" />
+        <!-- A newer version on GitHub (see Services/UpdateService.cs). -->
+        <InfoBar x:Name="UpdateBar" Grid.Row="1" IsOpen="False" Severity="Informational" Margin="8,4,8,0"
+                 Closed="OnUpdateBarClosed">
+            <InfoBar.ActionButton>
+                <Button x:Name="UpdateActionButton" Style="{ThemeResource AccentButtonStyle}" Click="OnUpdateActionClick" />
+            </InfoBar.ActionButton>
+            <InfoBar.Content>
+                <StackPanel Spacing="4" Margin="0,0,0,12">
+                    <ProgressBar x:Name="UpdateProgress" Maximum="1" Visibility="Collapsed" />
+                    <StackPanel x:Name="UpdateLinks" Orientation="Horizontal" Spacing="4">
+                        <HyperlinkButton x:Uid="UpdateNotesLink" x:Name="UpdateNotesLink" Click="OnUpdateNotesClick" />
+                        <HyperlinkButton x:Uid="UpdateSkipLink" x:Name="UpdateSkipLink" Click="OnUpdateSkipClick" />
+                    </StackPanel>
+                </StackPanel>
+            </InfoBar.Content>
+        </InfoBar>
 
-        <ScrollViewer x:Name="EmptyState" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <Grid x:Name="DocumentHost" Grid.Row="2" />
+
+        <ScrollViewer x:Name="EmptyState" Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Margin="24" MaxWidth="560">
-                <FontIcon Glyph="&#xEA90;" FontSize="64" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Image Source="ms-appx:///Assets/app-256.png" Width="96" Height="96" AutomationProperties.AccessibilityView="Raw" />
                 <TextBlock x:Uid="EmptyTitle" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
                 <TextBlock x:Uid="EmptyHint" HorizontalAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -76,11 +94,22 @@
                         </ListView.ItemTemplate>
                     </ListView>
                 </StackPanel>
+
+                <StackPanel HorizontalAlignment="Center" Spacing="2" Margin="0,16,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+                        <TextBlock x:Name="VersionText" VerticalAlignment="Center"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <HyperlinkButton x:Uid="CheckUpdatesLink" x:Name="CheckUpdatesLink" Click="OnCheckUpdatesClick" />
+                    </StackPanel>
+                    <CheckBox x:Uid="AutoUpdateCheck" x:Name="AutoUpdateCheck" HorizontalAlignment="Center"
+                              Checked="OnAutoUpdateChanged" Unchecked="OnAutoUpdateChanged" />
+                </StackPanel>
             </StackPanel>
         </ScrollViewer>
 
         <!-- Full screen: appears near the top edge or on tap, hides itself after a moment. -->
-        <Button x:Uid="ExitFullScreenButton" x:Name="ExitFullScreenButton" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top"
+        <Button x:Uid="ExitFullScreenButton" x:Name="ExitFullScreenButton" Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Top"
                 Margin="0,12,0,0" Visibility="Collapsed" Click="OnExitFullScreenClick">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <FontIcon Glyph="&#xE73F;" FontSize="16" />

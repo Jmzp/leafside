@@ -1,0 +1,27 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <!--
+    Per-user MSI (no administrator rights) around a published app folder:
+      dotnet build installer -c Release -p:Platform=x64 -p:PublishDir=<published folder> -p:ProductVersion=1.1.0
+    build/publish.ps1 does this for x64 and ARM64.
+  -->
+  <PropertyGroup>
+    <OutputName>LeafSide</OutputName>
+    <OutputType>Package</OutputType>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
+    <DefineConstants>PublishDir=$(PublishDir);ProductVersion=$(ProductVersion);RepoRoot=$(MSBuildThisFileDirectory)..</DefineConstants>
+    <!-- ICE03: WiX copies each DLL's language list into the MSI, and the Windows App SDK DLLs list many languages.
+         Per-user installs keep their files in the user profile with file key paths, which ICE38/64/91 flag.
+         That is the intended layout here (as for any %LocalAppData%\Programs app). -->
+    <SuppressIces>ICE03;ICE38;ICE64;ICE91</SuppressIces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+  <Target Name="CheckPublishDir" BeforeTargets="Build">
+    <Error Condition="'$(PublishDir)' == '' Or !Exists('$(PublishDir)\LeafSide.exe')"
+           Text="Set PublishDir to a published app folder (it must contain LeafSide.exe)." />
+  </Target>
+</Project>

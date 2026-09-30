@@ -22,6 +22,13 @@ public sealed class SessionState
 public sealed class AppSettings
 {
     public bool NightMode { get; set; }
+    /// <summary>Index in <see cref="Engine.AnnotationColor.Palette"/> of the last highlight color used.</summary>
+    public int HighlightColor { get; set; }
+    /// <summary>Check GitHub for a newer version once a day.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+    /// <summary>A version the user chose to skip: not offered again by the automatic check.</summary>
+    public string? SkippedVersion { get; set; }
 }
 
 public sealed class AppStateData

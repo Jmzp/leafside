@@ -46,6 +46,7 @@ public sealed partial class DocumentView : UserControl
 
         ThumbnailList.ItemsSource = Enumerable.Range(0, document.PageCount).Select(i => new ThumbnailItem(i)).ToList();
         _ = LoadOutlineAsync();
+        InitializeAnnotations();
     }
 
     public IPdfDocument Document { get; }
@@ -73,6 +74,7 @@ public sealed partial class DocumentView : UserControl
 
     public void Close()
     {
+        _closed = true;
         SaveViewState();
         _printCts?.Cancel();
         AppState.NightModeChanged -= OnNightModeChanged;
@@ -302,17 +304,22 @@ public sealed partial class DocumentView : UserControl
     private void ApplySidebarVisibility(bool show)
     {
         Sidebar.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        SidebarColumn.Width = show ? new GridLength(200) : new GridLength(0);
+        // Notes need more room than thumbnails.
+        double width = SidebarSelector.SelectedItem == NotesTab ? NotesSidebarWidth : 224;
+        SidebarColumn.Width = show ? new GridLength(width) : new GridLength(0);
     }
 
     private void OnFullScreen(object sender, RoutedEventArgs e) => FullScreenRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnSidebarSelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
     {
-        if (ThumbnailList is null || OutlinePane is null) return;
-        bool thumbnails = sender.SelectedItem == ThumbnailsTab;
-        ThumbnailList.Visibility = thumbnails ? Visibility.Visible : Visibility.Collapsed;
-        OutlinePane.Visibility = thumbnails ? Visibility.Collapsed : Visibility.Visible;
+        if (ThumbnailList is null || OutlinePane is null || NotesPane is null) return;
+        var selected = sender.SelectedItem;
+        ThumbnailList.Visibility = selected == ThumbnailsTab ? Visibility.Visible : Visibility.Collapsed;
+        OutlinePane.Visibility = selected == OutlineTab ? Visibility.Visible : Visibility.Collapsed;
+        NotesPane.Visibility = selected == NotesTab ? Visibility.Visible : Visibility.Collapsed;
+        if (selected == NotesTab) EnsureNotesLoaded();
+        if (Sidebar.Visibility == Visibility.Visible) ApplySidebarVisibility(true);
     }
 
     private void OnThumbnailContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)

@@ -73,4 +73,19 @@ public interface IPdfDocument : IDisposable
     string GetText(int pageIndex, int start, int count);
     IReadOnlyList<PageRect> GetTextRects(int pageIndex, int start, int count);
     IReadOnlyList<SearchMatch> Search(int pageIndex, string query, bool matchCase, bool wholeWord);
+
+    /// <summary>False for encrypted documents: their annotations are shown but cannot be changed.</summary>
+    bool CanEditAnnotations { get; }
+    /// <summary>The page's highlights and notes, in page order (other annotation kinds are left out).</summary>
+    IReadOnlyList<PdfAnnotation> GetAnnotations(int pageIndex);
+    PdfAnnotation AddAnnotation(int pageIndex, AnnotationDraft draft);
+    /// <summary>Changes an annotation; the result may be a re-created annotation (e.g. for a new color).</summary>
+    PdfAnnotation UpdateAnnotation(PdfAnnotation annotation, AnnotationDraft draft);
+    void RemoveAnnotation(PdfAnnotation annotation);
+
+    /// <summary>
+    /// Writes the document with its changes to <paramref name="path"/> (its own file by default), safely:
+    /// a failure leaves the target untouched. Afterwards <see cref="FilePath"/> is the saved file.
+    /// </summary>
+    void Save(string? path = null);
 }

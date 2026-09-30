@@ -7,7 +7,7 @@ namespace PdfReader.Core.Engine.Pdfium;
 /// <see cref="IPdfDocument"/> backed by PDFium. All methods are thread-safe: they serialize on the
 /// process-wide PDFium lock, so callers are free to use them from background render threads.
 /// </summary>
-public sealed unsafe class PdfiumDocument : IPdfDocument
+public sealed unsafe partial class PdfiumDocument : IPdfDocument
 {
     // PDFium's page<->device conversions work in integer device units; converting against a virtual
     // device this many times larger than the page in points keeps sub-point precision.
@@ -19,6 +19,8 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
     private readonly PageSize[] _sizes;
     private readonly LinkedList<CachedPage> _pageCache = new();
     private nint _doc;
+    // Null only for files over 4 GB, which PDFium loads itself (and which cannot be saved in place).
+    private readonly PdfFileSource? _source;
     private IReadOnlyList<OutlineItem>? _outline;
 
     private sealed class CachedPage(int index, nint page)
@@ -28,10 +30,12 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
         public nint TextPage { get; set; }
     }
 
-    private PdfiumDocument(string filePath, nint doc)
+    private PdfiumDocument(string filePath, nint doc, PdfFileSource? source)
     {
         FilePath = filePath;
         _doc = doc;
+        _source = source;
+        CanEditAnnotations = FPDF_GetSecurityHandlerRevision(doc) == -1;
         PageCount = FPDF_GetPageCount(doc);
         _sizes = new PageSize[PageCount];
         for (int i = 0; i < PageCount; i++)
@@ -42,7 +46,7 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
         }
     }
 
-    public string FilePath { get; }
+    public string FilePath { get; private set; }
     public int PageCount { get; }
 
     /// <exception cref="PdfPasswordRequiredException">The file is encrypted and the password is missing or wrong.</exception>
@@ -50,14 +54,32 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
     public static PdfiumDocument Open(string filePath, string? password = null)
     {
         EnsureInitialized();
+        PdfFileSource? source;
+        try
+        {
+            source = PdfFileSource.Open(filePath);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            throw new PdfOpenException(PdfOpenError.FileNotFound, "The file could not be opened.");
+        }
+        if (!PdfFileSource.Supports(source.Length))
+        {
+            source.Dispose();
+            source = null;
+        }
+
         lock (Sync)
         {
-            var doc = FPDF_LoadDocument(filePath, password);
+            var doc = source is not null ? FPDF_LoadCustomDocument(source.Access, password) : FPDF_LoadDocument(filePath, password);
             if (doc == 0)
             {
+                source?.Dispose();
                 uint error = FPDF_GetLastError();
                 if (error == FPDF_ERR_PASSWORD)
                     throw new PdfPasswordRequiredException("The document is password protected.");
+                // With custom loading the file was readable: anything but a security error means a damaged file.
+                if (source is not null && error != 5) error = 3;
                 throw error switch
                 {
                     2 => new PdfOpenException(PdfOpenError.FileNotFound, "The file could not be opened."),
@@ -66,7 +88,7 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
                     _ => new PdfOpenException(PdfOpenError.Unknown, $"The document could not be loaded (error {error})."),
                 };
             }
-            return new PdfiumDocument(filePath, doc);
+            return new PdfiumDocument(filePath, doc, source);
         }
     }
 
@@ -356,6 +378,7 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
             _pageCache.Clear();
             FPDF_CloseDocument(_doc);
             _doc = 0;
+            _source?.Dispose();
         }
     }
 }

@@ -19,6 +19,14 @@ using VirtualKey = Windows.System.VirtualKey;
 
 namespace PdfReader.App.Controls;
 
+/// <summary>A point on a page (page space) and where it is in the viewer, e.g. to show a flyout there.</summary>
+public sealed record PagePointEventArgs(int Page, double X, double Y, Windows.Foundation.Point Position);
+
+public sealed record AnnotationClickedEventArgs(PdfAnnotation Annotation, Windows.Foundation.Point Position);
+
+/// <summary>The selected text of one page, with its rectangles in page space.</summary>
+public sealed record TextSelectionPart(int Page, IReadOnlyList<PageRect> Rects, string Text);
+
 /// <summary>
 /// Continuous PDF viewer built for smooth scrolling on low-power (ARM) devices:
 /// <list type="bullet">
@@ -68,6 +76,10 @@ public sealed partial class PdfViewer : UserControl
     // Bumped whenever everything must be re-rendered (night mode, GPU device lost) so that renders that were
     // already running when that happened are dropped instead of attached.
     private int _renderGeneration;
+    // Bumped when a page's content changes (annotations): part of its layer key, so the page re-renders while
+    // the old bitmap stays visible until the new one is ready.
+    private readonly Dictionary<int, int> _pageRevisions = new();
+    private bool _placingNote;
 
     // Selection
     private readonly record struct TextPosition(int Page, int Char);
@@ -77,6 +89,8 @@ public sealed partial class PdfViewer : UserControl
     private bool _pointerPressed, _dragging;
     private Windows.Foundation.Point _pressPoint;
     private int _hitTestGeneration, _selectionGeneration;
+    private Task _selectionUpdate = Task.CompletedTask;
+    private Task _selectionAnchorUpdate = Task.CompletedTask;
 
     // Search
     private readonly Dictionary<int, List<SearchMatch>> _matchesByPage = new();
@@ -124,8 +138,9 @@ public sealed partial class PdfViewer : UserControl
         _panel.PointerPressed += OnPanelPointerPressed;
         _panel.PointerMoved += OnPanelPointerMoved;
         _panel.PointerReleased += OnPanelPointerReleased;
-        _panel.PointerCaptureLost += (_, _) => _pointerPressed = false;
         _panel.DoubleTapped += OnPanelDoubleTapped;
+        _panel.Tapped += OnPanelTapped;
+        _panel.ContextRequested += OnPanelContextRequested;
         PreviewKeyDown += OnPreviewKeyDown;
         Loaded += (_, _) => { if (XamlRoot is { } root) root.Changed += (_, _) => QueueUpdate(); };
     }
@@ -165,6 +180,43 @@ public sealed partial class PdfViewer : UserControl
         }
     }
     public event EventHandler? SearchResultsChanged;
+
+    /// <summary>Raised when an annotation (highlight or note) is clicked or tapped.</summary>
+    public event EventHandler<AnnotationClickedEventArgs>? AnnotationClicked;
+    /// <summary>Raised on a right click / press and hold away from annotations. Page is -1 outside pages.</summary>
+    public event EventHandler<PagePointEventArgs>? ContextMenuRequested;
+    /// <summary>Raised when the user picks where to put a note (see <see cref="IsPlacingNote"/>).</summary>
+    public event EventHandler<PagePointEventArgs>? NotePlacementRequested;
+    /// <summary>Raised after the user selected text with the mouse or pen (used by the highlighter).</summary>
+    public event EventHandler? SelectionCompleted;
+    /// <summary>Raised when a page's content changed and its sidebar thumbnail should be reloaded.</summary>
+    public event EventHandler<int>? PageInvalidated;
+
+    /// <summary>The next click on a page places a note instead of selecting text.</summary>
+    public bool IsPlacingNote
+    {
+        get => _placingNote;
+        set
+        {
+            _placingNote = value;
+            _panel.SetCursor(value ? InputSystemCursorShape.Cross : InputSystemCursorShape.IBeam);
+        }
+    }
+
+    /// <summary>Re-renders a page whose content changed (e.g. an annotation was added).</summary>
+    public void InvalidatePage(int pageIndex)
+    {
+        if (_document is null || pageIndex < 0 || pageIndex >= _document.PageCount) return;
+        _pageRevisions[pageIndex] = _pageRevisions.GetValueOrDefault(pageIndex) + 1;
+        _thumbnails.Remove(pageIndex);
+        _thumbnailTasks.Remove(pageIndex);
+        if (_realized.ContainsKey(pageIndex))
+            _ = GetThumbnailAsync(pageIndex, CancellationToken.None); // refreshes the page's base layer too
+        PageInvalidated?.Invoke(this, pageIndex);
+        QueueUpdate();
+    }
+
+    private int LayerKey(int scaleKey, int pageIndex) => scaleKey * 32 + (_pageRevisions.GetValueOrDefault(pageIndex) & 31);
     /// <summary>Raised on the UI thread when a page thumbnail becomes available.</summary>
     public event EventHandler<int>? ThumbnailReady;
 
@@ -205,6 +257,7 @@ public sealed partial class PdfViewer : UserControl
         _restoreTarget = null;
         _restoreTimeout.Stop();
         _history.Clear();
+        _pageRevisions.Clear();
         HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -506,7 +559,8 @@ public sealed partial class PdfViewer : UserControl
                 if (!page.Bounds.Intersects(sharpZone)) continue;
                 var size = _document.GetPageSize(page.PageIndex);
                 var (pw, ph) = TilePlanner.ScaledSize(size.Width, size.Height, scale);
-                page.BeginLayer(scaleKey);
+                int layerKey = LayerKey(scaleKey, page.PageIndex);
+                page.BeginLayer(layerKey);
                 double priority = (page.Bounds.Intersects(visible) ? 1 : 3) + Distance(page.Bounds, centerY);
 
                 IReadOnlyList<Tile> tiles;
@@ -528,9 +582,9 @@ public sealed partial class PdfViewer : UserControl
                 for (int t = 0; t < tiles.Count; t++)
                 {
                     var tile = tiles[t];
-                    if (page.HasTile(scaleKey, tile.Column, tile.Row)) continue;
+                    if (page.HasTile(layerKey, tile.Column, tile.Row)) continue;
                     complete = false;
-                    wanted[new RequestKey(page.PageIndex, scaleKey, tile.Column, tile.Row)] = (priority + t * 1e-3, scale, tile);
+                    wanted[new RequestKey(page.PageIndex, layerKey, tile.Column, tile.Row)] = (priority + t * 1e-3, scale, tile);
                 }
                 if (complete) page.DiscardPreviousLayer();
             }
@@ -662,19 +716,20 @@ public sealed partial class PdfViewer : UserControl
         bool invert = _nightMode;
         var task = _scheduler!.Schedule(() => surfaces.CreateSurface(document.Render(pageIndex, scale, 0, 0, w, h), invert), priority, token);
         _thumbnailTasks[pageIndex] = task;
-        _ = CompleteThumbnailAsync(pageIndex, document, _renderGeneration, task, (long)w * h * 4);
+        _ = CompleteThumbnailAsync(pageIndex, document, _renderGeneration, _pageRevisions.GetValueOrDefault(pageIndex), task, (long)w * h * 4);
         return task;
     }
 
-    private async Task CompleteThumbnailAsync(int pageIndex, IPdfDocument document, int generation, Task<CompositionDrawingSurface> task, long bytes)
+    private async Task CompleteThumbnailAsync(int pageIndex, IPdfDocument document, int generation, int revision, Task<CompositionDrawingSurface> task, long bytes)
     {
         try
         {
             var surface = await task;
             if (document != _document || generation != _renderGeneration) { surface.Dispose(); return; }
+            if (revision != _pageRevisions.GetValueOrDefault(pageIndex)) return; // outdated page content; not cached
             // Evicted thumbnails are not disposed explicitly: a sidebar item may still show one; GC reclaims them.
             _thumbnails.Add(pageIndex, surface, bytes);
-            if (_realized.TryGetValue(pageIndex, out var page) && !page.HasThumbnail) page.SetThumbnail(surface);
+            if (_realized.TryGetValue(pageIndex, out var page)) page.SetThumbnail(surface);
             ThumbnailReady?.Invoke(this, pageIndex);
         }
         catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException) { }
@@ -712,7 +767,8 @@ public sealed partial class PdfViewer : UserControl
             e.Handled = true;
             return;
         }
-        if (!point.Properties.IsLeftButtonPressed) return;
+        // Right button or pen barrel button: leave it to ContextRequested (the context menu).
+        if (!point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed || point.Properties.IsBarrelButtonPressed) return;
 
         _pointerPressed = true;
         _dragging = false;
@@ -720,20 +776,21 @@ public sealed partial class PdfViewer : UserControl
         _pressPoint = point.Position;
         _panel.CapturePointer(e.Pointer);
         e.Handled = true;
+        if (_placingNote) return; // the release places the note
 
         var (page, x, y) = ToPagePoint(point.Position, clampToNearest: false);
         ClearSelection();
-        if (page >= 0) _ = UpdateSelectionEndAsync(page, x, y, isAnchor: true);
+        if (page >= 0) _selectionAnchorUpdate = UpdateSelectionEndAsync(page, x, y, isAnchor: true);
     }
 
     private void OnPanelPointerMoved(object sender, PointerRoutedEventArgs e)
     {
-        if (!_pointerPressed || e.Pointer.PointerId != _pressedPointerId || _layout is null) return;
+        if (!_pointerPressed || e.Pointer.PointerId != _pressedPointerId || _layout is null || _placingNote) return;
         var position = e.GetCurrentPoint(_panel).Position;
         if (!_dragging && Math.Abs(position.X - _pressPoint.X) + Math.Abs(position.Y - _pressPoint.Y) < 4) return;
         _dragging = true;
         var (page, x, y) = ToPagePoint(position, clampToNearest: true);
-        _ = UpdateSelectionEndAsync(page, x, y, isAnchor: false);
+        _selectionUpdate = UpdateSelectionEndAsync(page, x, y, isAnchor: false);
         e.Handled = true;
     }
 
@@ -745,8 +802,96 @@ public sealed partial class PdfViewer : UserControl
         if (!_dragging && _layout is not null)
         {
             var (page, x, y) = ToPagePoint(_pressPoint, clampToNearest: false);
-            if (page >= 0) _ = FollowLinkAsync(page, x, y);
+            if (page >= 0) _ = OnPageClickAsync(page, x, y, _pressPoint);
         }
+        else if (_dragging && !_placingNote)
+        {
+            _ = CompleteSelectionAsync();
+        }
+    }
+
+    private async Task CompleteSelectionAsync()
+    {
+        try { await _selectionUpdate; } catch (Exception ex) when (ex is not OutOfMemoryException) { return; }
+        if (HasSelection) SelectionCompleted?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Touch: taps follow links, open annotations and place notes (mouse and pen do it on release).</summary>
+    private void OnPanelTapped(object sender, TappedRoutedEventArgs e)
+    {
+        if (_layout is null || e.PointerDeviceType != PointerDeviceType.Touch) return;
+        var point = e.GetPosition(_panel);
+        var (page, x, y) = ToPagePoint(point, clampToNearest: false);
+        if (page >= 0) _ = OnPageClickAsync(page, x, y, point);
+    }
+
+    private Windows.Foundation.Point ToViewerPoint(Windows.Foundation.Point panelPoint) =>
+        _panel.TransformToVisual(this).TransformPoint(panelPoint);
+
+    /// <summary>A click on a page: places a note, or opens the note, link or highlight under it (in that order).</summary>
+    private async Task OnPageClickAsync(int page, double x, double y, Windows.Foundation.Point panelPoint)
+    {
+        var position = ToViewerPoint(panelPoint);
+        if (_placingNote)
+        {
+            NotePlacementRequested?.Invoke(this, new PagePointEventArgs(page, x, y, position));
+            return;
+        }
+        var document = _document;
+        if (document is null) return;
+        var (ok, hit) = await RunOnDocumentAsync(() =>
+            (Note: HitTestAnnotation(document, page, x, y, notesOnly: true), Link: document.GetLinkAt(page, x, y),
+             Highlight: HitTestAnnotation(document, page, x, y, notesOnly: false)));
+        if (!ok || document != _document) return;
+        if (hit.Note is { } note) AnnotationClicked?.Invoke(this, new AnnotationClickedEventArgs(note, position));
+        else if (hit.Link is { } link) await FollowLinkAsync(link);
+        else if (hit.Highlight is { } highlight) AnnotationClicked?.Invoke(this, new AnnotationClickedEventArgs(highlight, position));
+    }
+
+    /// <summary>The topmost annotation at a page point: a note (its icon, a bit enlarged) or a highlighted area.</summary>
+    private static PdfAnnotation? HitTestAnnotation(IPdfDocument document, int page, double x, double y, bool notesOnly)
+    {
+        var annotations = document.GetAnnotations(page);
+        for (int i = annotations.Count - 1; i >= 0; i--)
+        {
+            var a = annotations[i];
+            if (a.Kind == AnnotationKind.Note)
+            {
+                var b = a.Bounds;
+                if (new PageRect(b.Left - 3, b.Top - 3, b.Right + 3, b.Bottom + 3).Contains(x, y)) return a;
+            }
+            else if (!notesOnly && a.Areas.Any(r => r.Contains(x, y)))
+            {
+                return a;
+            }
+        }
+        return null;
+    }
+
+    private async void OnPanelContextRequested(UIElement sender, ContextRequestedEventArgs e)
+    {
+        if (_layout is null) return;
+        e.Handled = true;
+        if (!e.TryGetPosition(_panel, out var point))
+        {
+            // Keyboard (Shift+F10, menu key): the middle of the viewport.
+            var visible = VisibleContentRect();
+            point = new Windows.Foundation.Point(visible.X + visible.Width / 2, visible.Y + visible.Height / 2);
+        }
+        var (page, x, y) = ToPagePoint(point, clampToNearest: false);
+        var position = ToViewerPoint(point);
+        var document = _document;
+        if (page >= 0 && document is not null)
+        {
+            var (ok, annotation) = await RunOnDocumentAsync(() => HitTestAnnotation(document, page, x, y, notesOnly: false));
+            if (!ok || document != _document) return;
+            if (annotation is not null)
+            {
+                AnnotationClicked?.Invoke(this, new AnnotationClickedEventArgs(annotation, position));
+                return;
+            }
+        }
+        ContextMenuRequested?.Invoke(this, new PagePointEventArgs(page, x, y, position));
     }
 
     /// <summary>Double tap / double click: toggles between fit width and twice that, centered on the point.</summary>
@@ -770,12 +915,8 @@ public sealed partial class PdfViewer : UserControl
         catch (ObjectDisposedException) { return (false, default!); }
     }
 
-    private async Task FollowLinkAsync(int page, double x, double y)
+    private async Task FollowLinkAsync(LinkTarget link)
     {
-        var document = _document;
-        if (document is null) return;
-        var (ok, link) = await RunOnDocumentAsync(() => document.GetLinkAt(page, x, y));
-        if (!ok || link is null || document != _document) return;
         if (link.Uri is { } uri && Uri.TryCreate(uri, UriKind.Absolute, out var target) && (target.Scheme is "http" or "https" or "mailto"))
             await Launcher.LaunchUriAsync(target);
         else if (link.PageIndex >= 0)
@@ -788,7 +929,11 @@ public sealed partial class PdfViewer : UserControl
         var document = _document;
         if (document is null) return;
         int generation = ++_hitTestGeneration;
+        // The hit tests run in parallel and can finish in any order: the focus must wait for the anchor, or a
+        // fast drag whose moves all finish first selects nothing.
+        var anchor = isAnchor ? Task.CompletedTask : _selectionAnchorUpdate;
         var (ok, index) = await RunOnDocumentAsync(() => document.GetCharIndexAt(page, x, y, isAnchor ? 4 : 12));
+        try { await anchor; } catch (Exception ex) when (ex is not OutOfMemoryException) { }
         if (!ok || document != _document || (!isAnchor && generation != _hitTestGeneration)) return;
         if (index < 0) return;
 
@@ -848,21 +993,29 @@ public sealed partial class PdfViewer : UserControl
         foreach (var page in _realized.Values) RefreshHighlights(page);
     }
 
-    public async Task CopySelectionAsync()
+    /// <summary>The selected text, page by page (empty when nothing is selected).</summary>
+    public async Task<IReadOnlyList<TextSelectionPart>> GetSelectionAsync()
     {
+        try { await _selectionUpdate; } catch (Exception ex) when (ex is not OutOfMemoryException) { }
         var document = _document;
-        if (document is null || OrderedSelection() is not var (start, end)) return;
-        var (ok, text) = await RunOnDocumentAsync(() =>
+        if (document is null || OrderedSelection() is not var (start, end)) return [];
+        var (ok, parts) = await RunOnDocumentAsync(() =>
         {
-            var parts = new List<string>();
+            var result = new List<TextSelectionPart>();
             for (int p = start.Page; p <= end.Page; p++)
             {
                 var (from, count) = SelectionRangeForPage(document, p, start, end);
-                if (count > 0) parts.Add(document.GetText(p, from, count));
+                if (count > 0) result.Add(new TextSelectionPart(p, document.GetTextRects(p, from, count), document.GetText(p, from, count)));
             }
-            return string.Join(Environment.NewLine, parts);
+            return result;
         });
-        if (!ok || string.IsNullOrEmpty(text)) return;
+        return ok && document == _document ? parts : [];
+    }
+
+    public async Task CopySelectionAsync()
+    {
+        var text = string.Join(Environment.NewLine, (await GetSelectionAsync()).Select(p => p.Text));
+        if (string.IsNullOrEmpty(text)) return;
         var package = new DataPackage();
         package.SetText(text.Replace("\r\n", "\n").Replace("\n", Environment.NewLine));
         Clipboard.SetContent(package);

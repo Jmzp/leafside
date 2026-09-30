@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v1.2.0 to build both architectures and publish a GitHub release with the zips.
+# Push a tag like v1.2.0 to build both architectures and publish a GitHub release with the zips and installers.
 on:
   push:
     tags: ["v*"]
@@ -34,13 +34,15 @@ jobs:
           $notes = @"
           ## Downloads
 
-          | Device | File |
-          | --- | --- |
-          | ARM64 (Surface Pro X / Surface with Snapdragon, other Windows on Arm) | ``PdfReader-$version-win-arm64.zip`` |
-          | x64 (Intel / AMD) | ``PdfReader-$version-win-x64.zip`` |
+          | Device | Installer (recommended) | Portable zip |
+          | --- | --- | --- |
+          | Intel / AMD PCs (x64) | ``LeafSide-$version-win-x64.msi`` | ``LeafSide-$version-win-x64.zip`` |
+          | Windows on Arm (Surface with Snapdragon, other ARM64 PCs) | ``LeafSide-$version-win-arm64.msi`` | ``LeafSide-$version-win-arm64.zip`` |
 
-          Extract the whole zip and run ``PdfReader.exe``. No installation or .NET runtime needed.
+          **Installer:** double-click the ``.msi``. It installs for your user only (no administrator rights), adds a
+          Start menu entry and LeafSide to *Open with*, and can be removed from Settings > Apps.
+          **Zip:** extract the whole zip and run ``LeafSide.exe``. Neither needs the .NET runtime.
           The app is not code-signed, so SmartScreen may ask you to confirm (More info > Run anyway).
           "@
-          gh release create $env:GITHUB_REF_NAME (Get-ChildItem artifacts/*.zip).FullName `
-            --title "PDF Reader $version" --notes $notes --generate-notes
+          gh release create $env:GITHUB_REF_NAME (Get-ChildItem artifacts/*.zip, artifacts/*.msi).FullName `
+            --title "LeafSide $version" --notes $notes --generate-notes

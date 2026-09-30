@@ -9,7 +9,7 @@
   <data name="EmptyHint.Text" xml:space="preserve"><value>You can also drag files into this window.</value></data>
   <data name="OpenButton.Content" xml:space="preserve"><value>Open PDF… (Ctrl+O)</value></data>
   <data name="DefaultAppLink.Content" xml:space="preserve"><value>Use as the default PDF reader</value></data>
-  <data name="DefaultAppLink.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Opens Settings &gt; Default apps. Search for .pdf and choose PDF Reader.</value></data>
+  <data name="DefaultAppLink.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Opens Settings &gt; Default apps. Search for .pdf and choose LeafSide.</value></data>
   <data name="RecentHeader.Text" xml:space="preserve"><value>Recent</value></data>
   <data name="RemoveRecent.Text" xml:space="preserve"><value>Remove from list</value></data>
   <data name="ShowInFolder.Text" xml:space="preserve"><value>Open file location</value></data>
@@ -48,8 +48,8 @@
   <data name="OutlineTab.Text" xml:space="preserve"><value>Contents</value></data>
   <data name="NoOutlineText.Text" xml:space="preserve"><value>This document has no table of contents.</value></data>
   <data name="PrintCancelButton.Content" xml:space="preserve"><value>Cancel</value></data>
-  <data name="AppName" xml:space="preserve"><value>PDF Reader</value></data>
-  <data name="WindowTitle" xml:space="preserve"><value>{0} - PDF Reader</value></data>
+  <data name="AppName" xml:space="preserve"><value>LeafSide</value></data>
+  <data name="WindowTitle" xml:space="preserve"><value>{0} - LeafSide</value></data>
   <data name="PdfDocument" xml:space="preserve"><value>PDF Document</value></data>
   <data name="DropCaption" xml:space="preserve"><value>Open PDF</value></data>
   <data name="Today" xml:space="preserve"><value>Today, {0:t}</value></data>
@@ -78,4 +78,62 @@
   <data name="PrintDialogFailed" xml:space="preserve"><value>The print dialog could not be shown.</value></data>
   <data name="PrintRejected" xml:space="preserve"><value>The printer did not accept the job.</value></data>
   <data name="PrintError" xml:space="preserve"><value>The printer reported an error.</value></data>
+  <data name="HighlightButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Highlight</value></data>
+  <data name="HighlightButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Highlight: select text to mark it. The arrow picks the color.</value></data>
+  <data name="NoteButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Add note</value></data>
+  <data name="NoteButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Add note: click where it should go</value></data>
+  <data name="UndoButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Undo</value></data>
+  <data name="UndoButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Undo (Ctrl+Z)</value></data>
+  <data name="SaveButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Save</value></data>
+  <data name="SaveButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Save highlights and notes into the file (Ctrl+S)</value></data>
+  <data name="NotesTab.Text" xml:space="preserve"><value>Notes</value></data>
+  <data name="NoNotesText.Text" xml:space="preserve"><value>No highlights or notes yet. Select text and choose Highlight, or right-click a page to add a note.</value></data>
+  <data name="EditAnnotationItem.Text" xml:space="preserve"><value>Edit comment</value></data>
+  <data name="DeleteAnnotationItem.Text" xml:space="preserve"><value>Delete</value></data>
+  <data name="ColorYellow" xml:space="preserve"><value>Yellow</value></data>
+  <data name="ColorGreen" xml:space="preserve"><value>Green</value></data>
+  <data name="ColorBlue" xml:space="preserve"><value>Blue</value></data>
+  <data name="ColorPink" xml:space="preserve"><value>Pink</value></data>
+  <data name="Highlight" xml:space="preserve"><value>Highlight</value></data>
+  <data name="Note" xml:space="preserve"><value>Note</value></data>
+  <data name="AnnotationHeader" xml:space="preserve"><value>{0} · page {1}</value></data>
+  <data name="CommentPlaceholder" xml:space="preserve"><value>Add a comment</value></data>
+  <data name="NotePlaceholder" xml:space="preserve"><value>Write a note</value></data>
+  <data name="CommentLabel" xml:space="preserve"><value>Comment</value></data>
+  <data name="DeleteAnnotation" xml:space="preserve"><value>Delete</value></data>
+  <data name="MenuCopy" xml:space="preserve"><value>Copy</value></data>
+  <data name="MenuHighlight" xml:space="preserve"><value>Highlight</value></data>
+  <data name="MenuHighlightComment" xml:space="preserve"><value>Highlight and comment</value></data>
+  <data name="MenuAddNote" xml:space="preserve"><value>Add note here</value></data>
+  <data name="SaveChangesTitle" xml:space="preserve"><value>Save changes to {0}?</value></data>
+  <data name="SaveChangesText" xml:space="preserve"><value>Your highlights and notes will be lost if you don't save them.</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="DontSave" xml:space="preserve"><value>Don't save</value></data>
+  <data name="SaveFailedTitle" xml:space="preserve"><value>Couldn't save {0}</value></data>
+  <data name="SaveReadOnly" xml:space="preserve"><value>The file is read-only or in a folder you can't write to.</value></data>
+  <data name="SaveInUse" xml:space="preserve"><value>The file couldn't be written. It may be open in another program.</value></data>
+  <data name="SaveElsewhere" xml:space="preserve"><value>Do you want to save a copy somewhere else?</value></data>
+  <data name="SaveAsButton" xml:space="preserve"><value>Save as…</value></data>
+  <data name="AnnotationFailed" xml:space="preserve"><value>Couldn't change the annotation</value></data>
+  <data name="VersionText" xml:space="preserve"><value>Version {0}</value></data>
+  <data name="CheckUpdatesLink.Content" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="AutoUpdateCheck.Content" xml:space="preserve"><value>Check for updates automatically</value></data>
+  <data name="UpdateNotesLink.Content" xml:space="preserve"><value>What's new</value></data>
+  <data name="UpdateSkipLink.Content" xml:space="preserve"><value>Skip this version</value></data>
+  <data name="UpdateAvailableTitle" xml:space="preserve"><value>Version {0} is available</value></data>
+  <data name="UpdateAvailableMessage" xml:space="preserve"><value>You have version {0}.</value></data>
+  <data name="UpdateInstall" xml:space="preserve"><value>Download and install</value></data>
+  <data name="UpdateDownloadZip" xml:space="preserve"><value>Download</value></data>
+  <data name="UpdateOpenPage" xml:space="preserve"><value>Open the download page</value></data>
+  <data name="UpdateDownloadingTitle" xml:space="preserve"><value>Downloading version {0}…</value></data>
+  <data name="UpdateReadyTitle" xml:space="preserve"><value>Ready to install</value></data>
+  <data name="UpdateReadyMessage" xml:space="preserve"><value>The app will close and the installer will open.</value></data>
+  <data name="UpdateZipReadyTitle" xml:space="preserve"><value>Update downloaded</value></data>
+  <data name="UpdateZipReadyMessage" xml:space="preserve"><value>The zip is in your Downloads folder. Close the app and extract it over this copy.</value></data>
+  <data name="UpdateNoneTitle" xml:space="preserve"><value>You're up to date</value></data>
+  <data name="UpdateNoneMessage" xml:space="preserve"><value>Version {0} is the latest.</value></data>
+  <data name="UpdateCheckFailedTitle" xml:space="preserve"><value>Couldn't check for updates</value></data>
+  <data name="UpdateCheckFailedMessage" xml:space="preserve"><value>GitHub couldn't be reached. Check your internet connection and try again.</value></data>
+  <data name="UpdateDownloadFailedTitle" xml:space="preserve"><value>Couldn't download the update</value></data>
+  <data name="UpdateDamagedMessage" xml:space="preserve"><value>The downloaded file was damaged, so it was deleted. Try again.</value></data>
 </root>

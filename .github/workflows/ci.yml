@@ -23,3 +23,7 @@ jobs:
 
       - name: Build app (ARM64)
         run: dotnet build src/PdfReader.App -c Release -p:Platform=ARM64
+
+      - name: Package (x64 zip and installer)
+        shell: pwsh
+        run: ./build/publish.ps1 -Platforms x64

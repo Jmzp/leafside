@@ -1,29 +1,45 @@
-LECTOR PDF para Windows (x64 y ARM64)
+LEAFSIDE, un lector de PDF rapido para Windows (x64 y ARM64)
 https://github.com/Jmzp/winui-pdf-reader
 
+Consejo: el instalador .msi de la pagina de descargas es mas comodo (aparece en el menu Inicio y se
+desinstala desde Configuracion > Aplicaciones). Este ZIP es la version portable.
+
 COMO EMPEZAR
-1. Descomprime TODO el ZIP en una carpeta (por ejemplo Documentos\PdfReader).
+1. Descomprime TODO el ZIP en una carpeta (por ejemplo Documentos\LeafSide).
    No lo ejecutes desde dentro del ZIP.
-2. Abre la carpeta y haz doble clic en PdfReader.exe.
+2. Abre la carpeta y haz doble clic en LeafSide.exe.
 3. Si aparece "Windows protegio su PC": clic en "Mas informacion" > "Ejecutar de todas formas".
    (Sale porque la app no esta firmada digitalmente.)
 4. Abre un PDF con el boton, con Ctrl+O o arrastrandolo a la ventana.
 
 ABRIR PDFs DESDE EL EXPLORADOR
 - Al abrirse, la app se anade a "Abrir con" para los .pdf (solo para tu usuario, sin administrador).
-- Clic derecho en un PDF > Abrir con > Elegir otra aplicacion > Lector PDF > "Siempre".
-- Si mueves la carpeta, abre PdfReader.exe una vez para que se actualice.
-- Para quitarlo: ejecuta  PdfReader.exe --unregister
+- Clic derecho en un PDF > Abrir con > Elegir otra aplicacion > LeafSide > "Siempre".
+- Si mueves la carpeta, abre LeafSide.exe una vez para que se actualice.
+- Para quitarlo: ejecuta  LeafSide.exe --unregister
+
+RESALTADOS Y NOTAS
+- Selecciona texto y pulsa el resaltador (la flecha de al lado elige el color), o haz clic derecho.
+- Anade una nota con el boton de nota (y luego clic en la pagina) o con clic derecho sobre la pagina.
+- Haz clic en un resaltado o nota para comentarlo, cambiarle el color o borrarlo. La pestana "Notas" los lista.
+- Se guardan DENTRO del PDF (Ctrl+S), asi que se ven tambien en Edge, Acrobat o el movil.
+  Si hay cambios sin guardar, la app pregunta antes de cerrar. Ctrl+Z / Ctrl+Y deshacer / rehacer.
 
 ATAJOS
   Ctrl+O abrir            Ctrl+W cerrar pestana    Ctrl+F buscar        F3 / Mayus+F3 siguiente / anterior
   Ctrl+G ir a pagina      Ctrl+P imprimir          Ctrl+0 ajustar al ancho   Ctrl+ / Ctrl- zoom
+  Ctrl+S guardar notas    Ctrl+Mayus+S guardar como  Ctrl+Z / Ctrl+Y deshacer / rehacer
   F11 pantalla completa (Esc)   Alt+Izquierda / Alt+Derecha atras / adelante
   Doble toque o doble clic: acercar / volver al ancho
 
 La app recuerda la pagina, el zoom y las pestanas abiertas (en %LocalAppData%\PdfReader).
 La interfaz se muestra en espanol si Windows esta en espanol; si no, en ingles.
+Una vez al dia consulta en GitHub si hay una version nueva (sin enviar datos tuyos). Se desactiva en la
+pantalla de inicio: "Buscar actualizaciones automaticamente".
 
 PRUEBA DE FLUIDEZ (opcional)
 Arrastra un PDF sobre Benchmark.bat. Hace scroll automatico unos segundos (no toques la ventana)
 y muestra los tiempos de frame. Tambien queda en %LocalAppData%\PdfReader\bench.log
+
+LeafSide es software libre bajo la licencia GNU GPL v3 (LICENSE.txt); el codigo fuente esta en la
+direccion de arriba. Licencias de terceros: THIRD-PARTY-NOTICES.md y la carpeta "licenses".

@@ -4,7 +4,7 @@
     <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>PdfReader.App</RootNamespace>
-    <AssemblyName>PdfReader</AssemblyName>
+    <AssemblyName>LeafSide</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
@@ -41,6 +41,7 @@
     <ProjectReference Include="..\PdfReader.Core\PdfReader.Core.csproj" />
     <!-- Native PDFium matching the target architecture (ARM64 builds run natively on Snapdragon devices). -->
     <Content Include="Assets\app.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\app-256.png" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\native\pdfium\$(PdfiumArch)\bin\pdfium.dll" Link="pdfium.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
@@ -48,6 +49,9 @@
   <ItemGroup>
     <None Include="..\..\packaging\*" LinkBase="." CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <None Include="..\native\pdfium\$(PdfiumArch)\LICENSE" Link="licenses\pdfium\LICENSE" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <!-- GPL-3.0: the license and the third-party notices travel with the binaries. -->
+    <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <None Include="..\native\pdfium\$(PdfiumArch)\licenses\*" LinkBase="licenses\pdfium" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 

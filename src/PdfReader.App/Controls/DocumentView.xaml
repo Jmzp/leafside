@@ -15,6 +15,12 @@
         <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackAccelerator" />
         <KeyboardAccelerator Modifiers="Control" Key="P" Invoked="OnPrintAccelerator" />
         <KeyboardAccelerator Modifiers="Menu" Key="Right" Invoked="OnForwardAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="S" Invoked="OnSaveAccelerator" />
+        <KeyboardAccelerator Modifiers="Control,Shift" Key="S" Invoked="OnSaveAsAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="Z" Invoked="OnUndoAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="Y" Invoked="OnRedoAccelerator" />
+        <KeyboardAccelerator Modifiers="Control,Shift" Key="Z" Invoked="OnRedoAccelerator" />
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
     </UserControl.KeyboardAccelerators>
 
     <Grid>
@@ -71,10 +77,37 @@
                 <Button x:Uid="FullScreenButton" Click="OnFullScreen" Padding="8,6">
                     <FontIcon Glyph="&#xE740;" FontSize="16" />
                 </Button>
+
+                <!-- Highlights and notes (hidden for encrypted documents, which cannot be annotated) -->
+                <StackPanel x:Name="AnnotationTools" Orientation="Horizontal" Spacing="4">
+                    <AppBarSeparator />
+                    <ToggleSplitButton x:Uid="HighlightButton" x:Name="HighlightButton" Padding="8,6"
+                                       IsCheckedChanged="OnHighlightCheckedChanged">
+                        <Grid>
+                            <FontIcon Glyph="&#xE7E6;" FontSize="16" />
+                            <Rectangle x:Name="HighlightSwatch" Height="3" RadiusX="1" RadiusY="1"
+                                       VerticalAlignment="Bottom" Margin="0,0,0,-5" />
+                        </Grid>
+                        <ToggleSplitButton.Flyout>
+                            <Flyout x:Name="HighlightColorFlyout" Placement="Bottom">
+                                <StackPanel x:Name="HighlightColorPanel" Orientation="Horizontal" Spacing="8" />
+                            </Flyout>
+                        </ToggleSplitButton.Flyout>
+                    </ToggleSplitButton>
+                    <ToggleButton x:Uid="NoteButton" x:Name="NoteButton" Click="OnNoteButtonClick" Padding="8,6">
+                        <FontIcon Glyph="&#xE70B;" FontSize="16" />
+                    </ToggleButton>
+                    <Button x:Uid="UndoButton" x:Name="UndoButton" Click="OnUndo" IsEnabled="False" Padding="8,6">
+                        <FontIcon Glyph="&#xE7A7;" FontSize="16" />
+                    </Button>
+                    <Button x:Uid="SaveButton" x:Name="SaveButton" Click="OnSave" IsEnabled="False" Padding="8,6">
+                        <FontIcon Glyph="&#xE74E;" FontSize="16" />
+                    </Button>
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                <AutoSuggestBox x:Uid="SearchBox" x:Name="SearchBox" Width="240" QueryIcon="Find"
+                <AutoSuggestBox x:Uid="SearchBox" x:Name="SearchBox" Width="200" QueryIcon="Find"
                                 QuerySubmitted="OnSearchSubmitted" TextChanged="OnSearchTextChanged" />
                 <TextBlock x:Name="SearchResultText" VerticalAlignment="Center" MinWidth="64" TextAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -90,7 +123,7 @@
         <!-- Sidebar + viewer -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="SidebarColumn" Width="200" />
+                <ColumnDefinition x:Name="SidebarColumn" Width="224" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -101,8 +134,13 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <SelectorBar x:Name="SidebarSelector" SelectionChanged="OnSidebarSelectionChanged">
+                    <SelectorBar.Resources>
+                        <!-- Narrower than the default (12) so the three tabs fit in English too. -->
+                        <Thickness x:Key="SelectorBarItemPadding">8,10,8,7</Thickness>
+                    </SelectorBar.Resources>
                     <SelectorBarItem x:Uid="ThumbnailsTab" x:Name="ThumbnailsTab" IsSelected="True" />
                     <SelectorBarItem x:Uid="OutlineTab" x:Name="OutlineTab" />
+                    <SelectorBarItem x:Uid="NotesTab" x:Name="NotesTab" />
                 </SelectorBar>
 
                 <ListView x:Name="ThumbnailList" Grid.Row="1" SelectionMode="Single" Padding="0,4"
@@ -124,6 +162,53 @@
                     </ListView.ItemContainerStyle>
                 </ListView>
 
+                <Grid x:Name="NotesPane" Grid.Row="1" Visibility="Collapsed">
+                    <ListView x:Name="NotesList" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnNoteItemClicked"
+                              Padding="0,4">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:AnnotationItem">
+                                <Grid Padding="0,8" ColumnSpacing="8">
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="EditAnnotationItem" Tag="{x:Bind}" Click="OnEditAnnotationItemClick">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE70F;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                            <MenuFlyoutItem x:Uid="DeleteAnnotationItem" Tag="{x:Bind}" Click="OnDeleteAnnotationItemClick">
+                                                <MenuFlyoutItem.Icon>
+                                                    <FontIcon Glyph="&#xE74D;" />
+                                                </MenuFlyoutItem.Icon>
+                                            </MenuFlyoutItem>
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="4" CornerRadius="2" Background="{x:Bind Swatch}" />
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="{x:Bind Glyph}" FontSize="12"
+                                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <TextBlock Text="{x:Bind Header}" Style="{ThemeResource CaptionTextBlockStyle}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{x:Bind Quote}" Visibility="{x:Bind HasQuote}" TextWrapping="Wrap"
+                                                   MaxLines="3" TextTrimming="CharacterEllipsis" FontStyle="Italic" />
+                                        <TextBlock Text="{x:Bind Comment}" Visibility="{x:Bind HasComment}" TextWrapping="Wrap"
+                                                   MaxLines="4" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <TextBlock x:Uid="NoNotesText" x:Name="NoNotesText" Margin="16" TextWrapping="Wrap" Visibility="Collapsed"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ProgressRing x:Name="NotesProgress" IsActive="False" Width="32" Height="32" Margin="16"
+                                  VerticalAlignment="Top" />
+                </Grid>
+
                 <Grid x:Name="OutlinePane" Grid.Row="1" Visibility="Collapsed">
                     <TreeView x:Name="OutlineTree" ItemInvoked="OnOutlineItemInvoked" SelectionMode="None" />
                     <TextBlock x:Uid="NoOutlineText" x:Name="NoOutlineText" Margin="16"
@@ -134,6 +219,7 @@
 
             <Grid Grid.Column="1" Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}">
                 <local:PdfViewer x:Name="Viewer" />
+                <InfoBar x:Name="AnnotationBar" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="16" MinWidth="320" />
                 <InfoBar x:Name="PrintBar" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="16" MinWidth="320"
                          IsClosable="False">
                     <InfoBar.ActionButton>

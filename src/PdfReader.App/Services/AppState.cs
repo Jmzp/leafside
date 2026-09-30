@@ -1,4 +1,5 @@
 using Microsoft.UI.Dispatching;
+using PdfReader.Core.Engine;
 using PdfReader.Core.State;
 
 namespace PdfReader.App.Services;
@@ -37,6 +38,19 @@ public static class AppState
             Store.Settings.NightMode = value;
             RequestSave();
             NightModeChanged?.Invoke();
+        }
+    }
+
+    /// <summary>The color for new highlights (the last one picked).</summary>
+    public static AnnotationColor HighlightColor
+    {
+        get => AnnotationColor.Palette[Math.Clamp(Store.Settings.HighlightColor, 0, AnnotationColor.Palette.Count - 1)];
+        set
+        {
+            int index = Math.Max(0, AnnotationColor.Palette.ToList().IndexOf(value));
+            if (Store.Settings.HighlightColor == index) return;
+            Store.Settings.HighlightColor = index;
+            RequestSave();
         }
     }
 
