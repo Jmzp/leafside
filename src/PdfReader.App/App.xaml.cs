@@ -10,6 +10,10 @@ public partial class App : Application
     private static App? _current;
     private MainWindow? _window;
 
+    // Files from launches redirected here before the window existed; opened once it does.
+    private static readonly Lock PendingLock = new();
+    private static readonly List<string> PendingFiles = [];
+
     public App()
     {
         _current = this;
@@ -30,7 +34,13 @@ public partial class App : Application
             _ = RunBenchmarkAsync(_window, benchFile);
             return;
         }
-        _ = _window.StartAsync(CommandLine.Files(arguments, File.Exists));
+        List<string> files;
+        lock (PendingLock)
+        {
+            files = [.. CommandLine.Files(arguments, File.Exists), .. PendingFiles];
+            PendingFiles.Clear();
+        }
+        _ = _window.StartAsync(files);
         _ = Task.Run(RegisterFileAssociation);
     }
 
@@ -55,7 +65,16 @@ public partial class App : Application
             IFileActivatedEventArgs file => file.Files.Select(f => f.Path).Where(File.Exists).ToList(),
             _ => [],
         };
-        if (_current?._window is not { } window) return;
+        MainWindow? window;
+        lock (PendingLock)
+        {
+            window = _current?._window;
+            if (window is null)
+            {
+                PendingFiles.AddRange(files);
+                return;
+            }
+        }
         window.DispatcherQueue.TryEnqueue(async () =>
         {
             window.BringToFront();

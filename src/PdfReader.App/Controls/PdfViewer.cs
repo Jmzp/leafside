@@ -760,12 +760,22 @@ public sealed partial class PdfViewer : UserControl
         _scroll.ZoomTo((float)target, new Vector2((float)point.X, (float)point.Y), new ScrollingZoomOptions(ScrollingAnimationMode.Auto));
     }
 
+    /// <summary>
+    /// Runs document work off the UI thread (it takes the PDFium lock, which rendering may hold).
+    /// Ok is false when the document was closed in the meantime.
+    /// </summary>
+    private static async Task<(bool Ok, T Value)> RunOnDocumentAsync<T>(Func<T> work)
+    {
+        try { return (true, await Task.Run(work)); }
+        catch (ObjectDisposedException) { return (false, default!); }
+    }
+
     private async Task FollowLinkAsync(int page, double x, double y)
     {
         var document = _document;
         if (document is null) return;
-        var link = await Task.Run(() => document.GetLinkAt(page, x, y));
-        if (link is null || document != _document) return;
+        var (ok, link) = await RunOnDocumentAsync(() => document.GetLinkAt(page, x, y));
+        if (!ok || link is null || document != _document) return;
         if (link.Uri is { } uri && Uri.TryCreate(uri, UriKind.Absolute, out var target) && (target.Scheme is "http" or "https" or "mailto"))
             await Launcher.LaunchUriAsync(target);
         else if (link.PageIndex >= 0)
@@ -778,8 +788,8 @@ public sealed partial class PdfViewer : UserControl
         var document = _document;
         if (document is null) return;
         int generation = ++_hitTestGeneration;
-        int index = await Task.Run(() => document.GetCharIndexAt(page, x, y, isAnchor ? 4 : 12));
-        if (document != _document || (!isAnchor && generation != _hitTestGeneration)) return;
+        var (ok, index) = await RunOnDocumentAsync(() => document.GetCharIndexAt(page, x, y, isAnchor ? 4 : 12));
+        if (!ok || document != _document || (!isAnchor && generation != _hitTestGeneration)) return;
         if (index < 0) return;
 
         var position = new TextPosition(page, index);
@@ -808,8 +818,8 @@ public sealed partial class PdfViewer : UserControl
         int generation = ++_selectionGeneration;
         // Only pages currently realized need rectangles; others are computed when realized.
         var pages = _realized.Keys.Where(p => p >= start.Page && p <= end.Page).ToList();
-        var rects = await Task.Run(() => pages.ToDictionary(p => p, p => SelectionRectsForPage(document, p, start, end)));
-        if (generation != _selectionGeneration || document != _document) return;
+        var (ok, rects) = await RunOnDocumentAsync(() => pages.ToDictionary(p => p, p => SelectionRectsForPage(document, p, start, end)));
+        if (!ok || generation != _selectionGeneration || document != _document) return;
 
         _selectionRects.Clear();
         foreach (var (p, r) in rects) _selectionRects[p] = r;
@@ -842,7 +852,7 @@ public sealed partial class PdfViewer : UserControl
     {
         var document = _document;
         if (document is null || OrderedSelection() is not var (start, end)) return;
-        string text = await Task.Run(() =>
+        var (ok, text) = await RunOnDocumentAsync(() =>
         {
             var parts = new List<string>();
             for (int p = start.Page; p <= end.Page; p++)
@@ -852,7 +862,7 @@ public sealed partial class PdfViewer : UserControl
             }
             return string.Join(Environment.NewLine, parts);
         });
-        if (string.IsNullOrEmpty(text)) return;
+        if (!ok || string.IsNullOrEmpty(text)) return;
         var package = new DataPackage();
         package.SetText(text.Replace("\r\n", "\n").Replace("\n", Environment.NewLine));
         Clipboard.SetContent(package);
@@ -898,7 +908,7 @@ public sealed partial class PdfViewer : UserControl
                 });
             }, cts.Token);
         }
-        catch (OperationCanceledException) { }
+        catch (Exception ex) when (ex is OperationCanceledException or ObjectDisposedException) { }
     }
 
     private void AddMatches(int page, IReadOnlyList<SearchMatch> matches)

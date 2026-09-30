@@ -36,7 +36,7 @@ public sealed class PdfiumDocumentTests : IDisposable
     {
         string path = Path.GetTempFileName();
         File.WriteAllText(path, "no es un pdf");
-        try { Assert.Throws<IOException>(() => PdfiumDocument.Open(path)); }
+        try { Assert.ThrowsAny<IOException>(() => PdfiumDocument.Open(path)); }
         finally { File.Delete(path); }
     }
 

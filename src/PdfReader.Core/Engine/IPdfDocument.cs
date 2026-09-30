@@ -29,6 +29,23 @@ public sealed record SearchMatch(int PageIndex, int CharIndex, int CharCount, IR
 
 public sealed class PdfPasswordRequiredException(string message) : Exception(message);
 
+/// <summary>Why a document could not be opened (the UI turns this into a localized message).</summary>
+public enum PdfOpenError
+{
+    Unknown,
+    /// <summary>The file does not exist or could not be read.</summary>
+    FileNotFound,
+    /// <summary>Not a PDF, or damaged beyond repair.</summary>
+    InvalidFormat,
+    /// <summary>Encrypted with a security handler PDFium does not support.</summary>
+    UnsupportedSecurity,
+}
+
+public sealed class PdfOpenException(PdfOpenError error, string message) : IOException(message)
+{
+    public PdfOpenError Error { get; } = error;
+}
+
 public interface IPdfDocument : IDisposable
 {
     string FilePath { get; }

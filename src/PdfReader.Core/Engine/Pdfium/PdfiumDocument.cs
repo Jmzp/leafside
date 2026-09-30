@@ -13,6 +13,8 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
     // device this many times larger than the page in points keeps sub-point precision.
     private const int Precision = 16;
     private const int MaxCachedPages = 8;
+    /// <summary>Extra pixels rendered left of / above a partial region (see <see cref="Render"/>).</summary>
+    private const int EdgeMargin = 16;
 
     private readonly PageSize[] _sizes;
     private readonly LinkedList<CachedPage> _pageCache = new();
@@ -55,14 +57,14 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
             {
                 uint error = FPDF_GetLastError();
                 if (error == FPDF_ERR_PASSWORD)
-                    throw new PdfPasswordRequiredException("El documento está protegido con contraseña.");
-                throw new IOException(error switch
+                    throw new PdfPasswordRequiredException("The document is password protected.");
+                throw error switch
                 {
-                    2 => "No se pudo abrir el archivo.",
-                    3 => "El archivo no es un PDF válido o está dañado.",
-                    5 => "El esquema de seguridad del documento no es compatible.",
-                    _ => $"No se pudo cargar el documento (error {error}).",
-                });
+                    2 => new PdfOpenException(PdfOpenError.FileNotFound, "The file could not be opened."),
+                    3 => new PdfOpenException(PdfOpenError.InvalidFormat, "The file is not a valid PDF or is damaged."),
+                    5 => new PdfOpenException(PdfOpenError.UnsupportedSecurity, "The document's security scheme is not supported."),
+                    _ => new PdfOpenException(PdfOpenError.Unknown, $"The document could not be loaded (error {error})."),
+                };
             }
             return new PdfiumDocument(filePath, doc);
         }
@@ -72,25 +74,32 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
 
     public RenderedBitmap Render(int pageIndex, double scale, int regionX, int regionY, int regionWidth, int regionHeight)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(pageIndex);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(pageIndex, PageCount);
         ArgumentOutOfRangeException.ThrowIfLessThan(regionWidth, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(regionHeight, 1);
 
         var size = _sizes[pageIndex];
         int fullWidth = Math.Max(1, (int)Math.Round(size.Width * scale));
         int fullHeight = Math.Max(1, (int)Math.Round(size.Height * scale));
-        var pixels = GC.AllocateUninitializedArray<byte>(regionWidth * regionHeight * 4);
+
+        // PDFium mis-draws glyphs that straddle the left edge of the target bitmap, which showed up as seams
+        // between tiles. Regions that do not start at the page edge are rendered with a margin, then cropped.
+        int padLeft = Math.Clamp(regionX, 0, EdgeMargin), padTop = Math.Clamp(regionY, 0, EdgeMargin);
+        int renderWidth = regionWidth + padLeft, renderHeight = regionHeight + padTop;
+        var rendered = GC.AllocateUninitializedArray<byte>(renderWidth * renderHeight * 4);
 
         lock (Sync)
         {
             var page = GetPage(pageIndex).Page;
-            fixed (byte* p = pixels)
+            fixed (byte* p = rendered)
             {
-                var bitmap = FPDFBitmap_CreateEx(regionWidth, regionHeight, FPDFBitmap_BGRA, p, regionWidth * 4);
-                if (bitmap == 0) throw new OutOfMemoryException("PDFium no pudo crear el bitmap.");
+                var bitmap = FPDFBitmap_CreateEx(renderWidth, renderHeight, FPDFBitmap_BGRA, p, renderWidth * 4);
+                if (bitmap == 0) throw new InsufficientMemoryException("PDFium could not allocate the bitmap.");
                 try
                 {
-                    FPDFBitmap_FillRect(bitmap, 0, 0, regionWidth, regionHeight, 0xFFFFFFFF);
-                    FPDF_RenderPageBitmap(bitmap, page, -regionX, -regionY, fullWidth, fullHeight, 0, FPDF_ANNOT);
+                    FPDFBitmap_FillRect(bitmap, 0, 0, renderWidth, renderHeight, 0xFFFFFFFF);
+                    FPDF_RenderPageBitmap(bitmap, page, padLeft - regionX, padTop - regionY, fullWidth, fullHeight, 0, FPDF_ANNOT);
                 }
                 finally
                 {
@@ -98,6 +107,11 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
                 }
             }
         }
+
+        if (padLeft == 0 && padTop == 0) return new RenderedBitmap(rendered, regionWidth, regionHeight);
+        var pixels = GC.AllocateUninitializedArray<byte>(regionWidth * regionHeight * 4);
+        for (int row = 0; row < regionHeight; row++)
+            Buffer.BlockCopy(rendered, ((row + padTop) * renderWidth + padLeft) * 4, pixels, row * regionWidth * 4, regionWidth * 4);
         return new RenderedBitmap(pixels, regionWidth, regionHeight);
     }
 
@@ -114,6 +128,7 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
     {
         lock (Sync)
         {
+            ObjectDisposedException.ThrowIf(_doc == 0, this);
             return _outline ??= ReadOutline(0, new HashSet<nint>(), 0);
         }
     }
@@ -304,7 +319,7 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
         }
 
         var page = FPDF_LoadPage(_doc, pageIndex);
-        if (page == 0) throw new InvalidDataException($"No se pudo cargar la página {pageIndex + 1}.");
+        if (page == 0) throw new InvalidDataException($"Page {pageIndex + 1} could not be loaded.");
         var cached = new CachedPage(pageIndex, page);
         _pageCache.AddFirst(cached);
         while (_pageCache.Count > MaxCachedPages)
@@ -321,7 +336,7 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
         if (cached.TextPage == 0)
         {
             cached.TextPage = FPDFText_LoadPage(cached.Page);
-            if (cached.TextPage == 0) throw new InvalidDataException($"No se pudo leer el texto de la página {pageIndex + 1}.");
+            if (cached.TextPage == 0) throw new InvalidDataException($"The text of page {pageIndex + 1} could not be read.");
         }
         return cached.TextPage;
     }
