@@ -44,6 +44,11 @@ public sealed class RenderScheduler : IDisposable
 
     public int PendingCount { get { lock (_lock) return _queue.Count; } }
 
+    /// <summary>How long <see cref="Dispose"/> waits for a running job before returning anyway.</summary>
+    internal TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(2);
+
+    internal bool IsShuttingDown => _shutdown.IsCancellationRequested;
+
     public Task<T> Schedule<T>(Func<T> work, double priority, CancellationToken token = default)
     {
         var job = new Job<T>(work, token);
@@ -88,7 +93,9 @@ public sealed class RenderScheduler : IDisposable
     {
         if (_shutdown.IsCancellationRequested) return;
         _shutdown.Cancel();
-        _thread.Join(TimeSpan.FromSeconds(2));
+        // A job that is still running (e.g. a huge page) keeps the thread alive past the timeout; it then needs
+        // the token and semaphore to wind down, so they are only disposed once the thread is gone.
+        if (!_thread.Join(ShutdownTimeout)) return;
         _shutdown.Dispose();
         _signal.Dispose();
     }

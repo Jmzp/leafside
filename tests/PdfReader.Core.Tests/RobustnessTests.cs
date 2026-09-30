@@ -217,12 +217,32 @@ public sealed partial class RobustnessTests : IDisposable
         var cancelled = scheduler.Schedule(() => 1, 0, new CancellationToken(canceled: true));
         Assert.True(cancelled.IsCanceled);
 
+        var started = new ManualResetEventSlim();
         var gate = new ManualResetEventSlim();
-        var running = scheduler.Schedule(() => { gate.Wait(TimeSpan.FromSeconds(5)); return 1; }, 0);
+        var running = scheduler.Schedule(() => { started.Set(); gate.Wait(TimeSpan.FromSeconds(5)); return 1; }, 0);
         var pending = scheduler.Schedule(() => 2, 1);
+        Assert.True(started.Wait(TimeSpan.FromSeconds(5)));
         var disposing = Task.Run(scheduler.Dispose);
+        // Let the running job finish only once shutdown has been requested, so "pending" can never run.
+        Assert.True(SpinWait.SpinUntil(() => scheduler.IsShuttingDown, TimeSpan.FromSeconds(5)));
         gate.Set();
         await disposing;
+        Assert.Equal(1, await running);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+    }
+
+    [Fact]
+    public async Task Scheduler_survives_a_job_that_outlives_dispose()
+    {
+        // A render still running when the timeout expires must not crash the render thread afterwards.
+        var scheduler = new RenderScheduler("test") { ShutdownTimeout = TimeSpan.FromMilliseconds(50) };
+        var started = new ManualResetEventSlim();
+        var gate = new ManualResetEventSlim();
+        var running = scheduler.Schedule(() => { started.Set(); gate.Wait(TimeSpan.FromSeconds(5)); return 1; }, 0);
+        var pending = scheduler.Schedule(() => 2, 1);
+        Assert.True(started.Wait(TimeSpan.FromSeconds(5)));
+        scheduler.Dispose(); // returns while the job is still running
+        gate.Set();
         Assert.Equal(1, await running);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
     }
