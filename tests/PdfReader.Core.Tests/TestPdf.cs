@@ -30,7 +30,7 @@ internal static class TestPdf
             objects[ContentObj(i)] = $"<< /Length {stream.Length} >>\nstream\n{stream}\nendstream";
             string prev = i > 0 ? $" /Prev {OutlineObj(i - 1)} 0 R" : "";
             string next = i < n - 1 ? $" /Next {OutlineObj(i + 1)} 0 R" : "";
-            objects[OutlineObj(i)] = $"<< /Title (Capitulo {i + 1}) /Parent 4 0 R{prev}{next} /Dest [{PageObj(i)} 0 R /Fit] >>";
+            objects[OutlineObj(i)] = $"<< /Title (Chapter {i + 1}) /Parent 4 0 R{prev}{next} /Dest [{PageObj(i)} 0 R /Fit] >>";
         }
         if (n > 1)
             objects[linkObj] = $"<< /Type /Annot /Subtype /Link /Rect [0 0 100 100] /Border [0 0 0] /Dest [{PageObj(n - 1)} 0 R /Fit] >>";

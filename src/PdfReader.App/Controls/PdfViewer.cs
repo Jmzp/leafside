@@ -976,9 +976,7 @@ public sealed partial class PdfViewer : UserControl
 
             intervals.Sort();
             double P(double q) => intervals[(int)Math.Min(intervals.Count - 1, q * intervals.Count)];
-            report.AppendLine($"zoom {zoom:P0}: {frames} frames, páginas hasta {_currentPage + 1}, " +
-                              $"frame p50 {P(0.5):F1} ms, p95 {P(0.95):F1} ms, p99 {P(0.99):F1} ms, máx {intervals[^1]:F1} ms, " +
-                              $">33 ms: {intervals.Count(i => i > 33.4)}, pendientes {_scheduler?.PendingCount}");
+            report.AppendLine(FormattableString.Invariant($"zoom {zoom:P0}: {frames} frames, reached page {_currentPage + 1}, frame p50 {P(0.5):F1} ms, p95 {P(0.95):F1} ms, p99 {P(0.99):F1} ms, max {intervals[^1]:F1} ms, >33 ms: {intervals.Count(i => i > 33.4)}, pending {_scheduler?.PendingCount}"));
         }
         return report.ToString();
     }

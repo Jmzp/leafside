@@ -48,7 +48,7 @@ public static class PrintService
         {
             Marshal.StructureToPtr(new PRINTPAGERANGE { nFromPage = 1, nToPage = (uint)pageCount }, ranges, false);
             int hr = PrintDlgEx(ref dialog);
-            if (hr != 0) throw new COMException("No se pudo mostrar el diálogo de impresión.", hr);
+            if (hr != 0) throw new COMException(Loc.Get("PrintDialogFailed"), hr);
             if (dialog.dwResultAction != PD_RESULT_PRINT || dialog.hDC == 0)
             {
                 if (dialog.hDC != 0) DeleteDC(dialog.hDC);
@@ -91,7 +91,7 @@ public static class PrintService
         try
         {
             var info = new DOCINFOW { cbSize = Marshal.SizeOf<DOCINFOW>(), lpszDocName = name, lpszOutput = output };
-            if (StartDoc(job.Hdc, info) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), "La impresora no aceptó el trabajo.");
+            if (StartDoc(job.Hdc, info) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), Loc.Get("PrintRejected"));
             int width = GetDeviceCaps(job.Hdc, HORZRES), height = GetDeviceCaps(job.Hdc, VERTRES);
             for (int i = 0; i < job.Pages.Count; i++)
             {
@@ -103,12 +103,12 @@ public static class PrintService
                 int page = job.Pages[i];
                 var size = document.GetPageSize(page);
                 var place = PrintLayout.Fit(size.Width, size.Height, width, height);
-                if (StartPage(job.Hdc) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), "Error al imprimir.");
+                if (StartPage(job.Hdc) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), Loc.Get("PrintError"));
                 document.RenderToDC(page, job.Hdc, place.X, place.Y, place.Width, place.Height, place.Rotate);
-                if (EndPage(job.Hdc) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), "Error al imprimir.");
+                if (EndPage(job.Hdc) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), Loc.Get("PrintError"));
                 progress.Report(i + 1);
             }
-            if (EndDoc(job.Hdc) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), "Error al terminar la impresión.");
+            if (EndDoc(job.Hdc) <= 0) throw new Win32Exception(Marshal.GetLastPInvokeError(), Loc.Get("PrintError"));
         }
         catch (Win32Exception)
         {

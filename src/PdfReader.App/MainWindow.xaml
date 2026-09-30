@@ -2,8 +2,7 @@
     x:Class="PdfReader.App.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:PdfReader.App"
-    Title="Lector PDF">
+    xmlns:local="using:PdfReader.App">
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
@@ -31,27 +30,26 @@
         <ScrollViewer x:Name="EmptyState" Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16" Margin="24" MaxWidth="560">
                 <FontIcon Glyph="&#xEA90;" FontSize="64" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <TextBlock Text="Abre un PDF para empezar" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
-                <TextBlock Text="También puedes arrastrar archivos a esta ventana." HorizontalAlignment="Center"
+                <TextBlock x:Uid="EmptyTitle" Style="{ThemeResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
+                <TextBlock x:Uid="EmptyHint" HorizontalAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <Button Content="Abrir PDF… (Ctrl+O)" Style="{ThemeResource AccentButtonStyle}" HorizontalAlignment="Center" Click="OnOpenClick" />
-                <HyperlinkButton Content="Usar como lector de PDF predeterminado" HorizontalAlignment="Center" Click="OnDefaultAppClick"
-                                 ToolTipService.ToolTip="Abre Configuración > Aplicaciones predeterminadas. Busca .pdf y elige Lector PDF." />
+                <Button x:Uid="OpenButton" Style="{ThemeResource AccentButtonStyle}" HorizontalAlignment="Center" Click="OnOpenClick" />
+                <HyperlinkButton x:Uid="DefaultAppLink" HorizontalAlignment="Center" Click="OnDefaultAppClick" />
 
                 <StackPanel x:Name="RecentPanel" Spacing="4" Margin="0,16,0,0">
-                    <TextBlock Text="Recientes" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="12,0" />
+                    <TextBlock x:Uid="RecentHeader" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="12,0" />
                     <ListView x:Name="RecentList" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnRecentClicked">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:RecentItem">
                                 <Grid Padding="0,6" ColumnSpacing="12">
                                     <Grid.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="Quitar de la lista" Tag="{x:Bind Path}" Click="OnRemoveRecentClick">
+                                            <MenuFlyoutItem x:Uid="RemoveRecent" Tag="{x:Bind Path}" Click="OnRemoveRecentClick">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE711;" />
                                                 </MenuFlyoutItem.Icon>
                                             </MenuFlyoutItem>
-                                            <MenuFlyoutItem Text="Abrir ubicación del archivo" Tag="{x:Bind Path}" Click="OnShowRecentInFolderClick">
+                                            <MenuFlyoutItem x:Uid="ShowInFolder" Tag="{x:Bind Path}" Click="OnShowRecentInFolderClick">
                                                 <MenuFlyoutItem.Icon>
                                                     <FontIcon Glyph="&#xE838;" />
                                                 </MenuFlyoutItem.Icon>
@@ -82,12 +80,11 @@
         </ScrollViewer>
 
         <!-- Full screen: appears near the top edge or on tap, hides itself after a moment. -->
-        <Button x:Name="ExitFullScreenButton" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top"
-                Margin="0,12,0,0" Visibility="Collapsed" Click="OnExitFullScreenClick" AutomationProperties.Name="Salir de pantalla completa"
-                ToolTipService.ToolTip="Salir de pantalla completa (Esc)">
+        <Button x:Uid="ExitFullScreenButton" x:Name="ExitFullScreenButton" Grid.RowSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="0,12,0,0" Visibility="Collapsed" Click="OnExitFullScreenClick">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <FontIcon Glyph="&#xE73F;" FontSize="16" />
-                <TextBlock Text="Salir de pantalla completa" AutomationProperties.AccessibilityView="Raw" />
+                <TextBlock x:Uid="ExitFullScreenText" AutomationProperties.AccessibilityView="Raw" />
             </StackPanel>
         </Button>
     </Grid>

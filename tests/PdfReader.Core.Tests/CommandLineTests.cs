@@ -3,7 +3,7 @@ namespace PdfReader.Core.Tests;
 public sealed class CommandLineTests
 {
     [Theory]
-    [InlineData(@"""C:\Program Files\Lector\PdfReader.exe"" ""C:\Docs\a b.pdf""", new[] { @"C:\Program Files\Lector\PdfReader.exe", @"C:\Docs\a b.pdf" })]
+    [InlineData(@"""C:\Program Files\PDF Reader\PdfReader.exe"" ""C:\Docs\a b.pdf""", new[] { @"C:\Program Files\PDF Reader\PdfReader.exe", @"C:\Docs\a b.pdf" })]
     [InlineData(@"PdfReader.exe   C:\x.pdf  --bench", new[] { "PdfReader.exe", @"C:\x.pdf", "--bench" })]
     [InlineData(@"a\\""b c"" d", new[] { @"a\b c", "d" })]
     [InlineData(@"a\""b", new[] { @"a""b" })]

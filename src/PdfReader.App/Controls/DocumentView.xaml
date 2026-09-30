@@ -33,58 +33,55 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                <ToggleButton x:Name="SidebarToggle" IsChecked="True" AutomationProperties.Name="Panel lateral" ToolTipService.ToolTip="Panel lateral"
+                <ToggleButton x:Uid="SidebarToggle" x:Name="SidebarToggle" IsChecked="True"
                               Checked="OnSidebarToggled" Unchecked="OnSidebarToggled" Padding="8,6">
                     <FontIcon Glyph="&#xE700;" FontSize="16" />
                 </ToggleButton>
-                <Button x:Name="BackButton" Click="OnBack" IsEnabled="False" AutomationProperties.Name="Atrás"
-                        ToolTipService.ToolTip="Atrás (Alt+←)" Padding="8,6">
+                <Button x:Uid="BackButton" x:Name="BackButton" Click="OnBack" IsEnabled="False" Padding="8,6">
                     <FontIcon Glyph="&#xE72B;" FontSize="16" />
                 </Button>
-                <Button x:Name="ForwardButton" Click="OnForward" IsEnabled="False" AutomationProperties.Name="Adelante"
-                        ToolTipService.ToolTip="Adelante (Alt+→)" Padding="8,6">
+                <Button x:Uid="ForwardButton" x:Name="ForwardButton" Click="OnForward" IsEnabled="False" Padding="8,6">
                     <FontIcon Glyph="&#xE72A;" FontSize="16" />
                 </Button>
                 <AppBarSeparator />
-                <TextBox x:Name="PageBox" Width="64" TextAlignment="Center" KeyDown="OnPageBoxKeyDown"
-                         LostFocus="OnPageBoxLostFocus" ToolTipService.ToolTip="Ir a la página (Ctrl+G)" />
+                <TextBox x:Uid="PageBox" x:Name="PageBox" Width="64" TextAlignment="Center" KeyDown="OnPageBoxKeyDown"
+                         LostFocus="OnPageBoxLostFocus" />
                 <TextBlock x:Name="PageCountText" VerticalAlignment="Center" Margin="4,0,8,0" />
                 <AppBarSeparator />
-                <Button Click="OnZoomOut" AutomationProperties.Name="Alejar" ToolTipService.ToolTip="Alejar (Ctrl+-)" Padding="8,6">
+                <Button x:Uid="ZoomOutButton" Click="OnZoomOut" Padding="8,6">
                     <FontIcon Glyph="&#xE71F;" FontSize="16" />
                 </Button>
                 <TextBlock x:Name="ZoomText" Width="52" TextAlignment="Center" VerticalAlignment="Center" />
-                <Button Click="OnZoomIn" AutomationProperties.Name="Acercar" ToolTipService.ToolTip="Acercar (Ctrl++)" Padding="8,6">
+                <Button x:Uid="ZoomInButton" Click="OnZoomIn" Padding="8,6">
                     <FontIcon Glyph="&#xE8A3;" FontSize="16" />
                 </Button>
-                <Button Click="OnFitWidth" AutomationProperties.Name="Ajustar al ancho" ToolTipService.ToolTip="Ajustar al ancho (Ctrl+0)" Padding="8,6">
+                <Button x:Uid="FitWidthButton" Click="OnFitWidth" Padding="8,6">
                     <FontIcon Glyph="&#xE9A6;" FontSize="16" />
                 </Button>
-                <Button Click="OnFitPage" AutomationProperties.Name="Página completa" ToolTipService.ToolTip="Página completa" Padding="8,6">
+                <Button x:Uid="FitPageButton" Click="OnFitPage" Padding="8,6">
                     <FontIcon Glyph="&#xE9A8;" FontSize="16" />
                 </Button>
                 <AppBarSeparator />
-                <Button Click="OnPrint" AutomationProperties.Name="Imprimir" ToolTipService.ToolTip="Imprimir (Ctrl+P)" Padding="8,6">
+                <Button x:Uid="PrintButton" Click="OnPrint" Padding="8,6">
                     <FontIcon Glyph="&#xE749;" FontSize="16" />
                 </Button>
-                <ToggleButton x:Name="NightToggle" Click="OnNightModeClick" AutomationProperties.Name="Modo noche"
-                              ToolTipService.ToolTip="Modo noche" Padding="8,6">
+                <ToggleButton x:Uid="NightToggle" x:Name="NightToggle" Click="OnNightModeClick" Padding="8,6">
                     <FontIcon Glyph="&#xE708;" FontSize="16" />
                 </ToggleButton>
-                <Button Click="OnFullScreen" AutomationProperties.Name="Pantalla completa" ToolTipService.ToolTip="Pantalla completa (F11)" Padding="8,6">
+                <Button x:Uid="FullScreenButton" Click="OnFullScreen" Padding="8,6">
                     <FontIcon Glyph="&#xE740;" FontSize="16" />
                 </Button>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                <AutoSuggestBox x:Name="SearchBox" Width="240" PlaceholderText="Buscar (Ctrl+F)" QueryIcon="Find"
+                <AutoSuggestBox x:Uid="SearchBox" x:Name="SearchBox" Width="240" QueryIcon="Find"
                                 QuerySubmitted="OnSearchSubmitted" TextChanged="OnSearchTextChanged" />
                 <TextBlock x:Name="SearchResultText" VerticalAlignment="Center" MinWidth="64" TextAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <Button Click="OnPreviousMatch" AutomationProperties.Name="Anterior" ToolTipService.ToolTip="Anterior (Mayús+F3)" Padding="8,6">
+                <Button x:Uid="PreviousMatchButton" Click="OnPreviousMatch" Padding="8,6">
                     <FontIcon Glyph="&#xE70E;" FontSize="14" />
                 </Button>
-                <Button Click="OnNextMatch" AutomationProperties.Name="Siguiente" ToolTipService.ToolTip="Siguiente (F3)" Padding="8,6">
+                <Button x:Uid="NextMatchButton" Click="OnNextMatch" Padding="8,6">
                     <FontIcon Glyph="&#xE70D;" FontSize="14" />
                 </Button>
             </StackPanel>
@@ -104,8 +101,8 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <SelectorBar x:Name="SidebarSelector" SelectionChanged="OnSidebarSelectionChanged">
-                    <SelectorBarItem x:Name="ThumbnailsTab" Text="Miniaturas" IsSelected="True" />
-                    <SelectorBarItem x:Name="OutlineTab" Text="Índice" />
+                    <SelectorBarItem x:Uid="ThumbnailsTab" x:Name="ThumbnailsTab" IsSelected="True" />
+                    <SelectorBarItem x:Uid="OutlineTab" x:Name="OutlineTab" />
                 </SelectorBar>
 
                 <ListView x:Name="ThumbnailList" Grid.Row="1" SelectionMode="Single" Padding="0,4"
@@ -129,7 +126,7 @@
 
                 <Grid x:Name="OutlinePane" Grid.Row="1" Visibility="Collapsed">
                     <TreeView x:Name="OutlineTree" ItemInvoked="OnOutlineItemInvoked" SelectionMode="None" />
-                    <TextBlock x:Name="NoOutlineText" Text="Este documento no tiene índice." Margin="16"
+                    <TextBlock x:Uid="NoOutlineText" x:Name="NoOutlineText" Margin="16"
                                TextWrapping="Wrap" Visibility="Collapsed"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 </Grid>
@@ -138,9 +135,9 @@
             <Grid Grid.Column="1" Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}">
                 <local:PdfViewer x:Name="Viewer" />
                 <InfoBar x:Name="PrintBar" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="16" MinWidth="320"
-                         IsClosable="False" Title="Imprimiendo">
+                         IsClosable="False">
                     <InfoBar.ActionButton>
-                        <Button x:Name="PrintCancelButton" Content="Cancelar" Click="OnCancelPrint" />
+                        <Button x:Uid="PrintCancelButton" x:Name="PrintCancelButton" Click="OnCancelPrint" />
                     </InfoBar.ActionButton>
                 </InfoBar>
             </Grid>

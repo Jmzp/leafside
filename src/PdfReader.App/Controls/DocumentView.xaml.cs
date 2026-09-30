@@ -10,7 +10,7 @@ namespace PdfReader.App.Controls;
 public sealed record ThumbnailItem(int Index)
 {
     public string Label => (Index + 1).ToString();
-    public override string ToString() => $"Página {Index + 1}"; // accessible name
+    public override string ToString() => Loc.Format("PageName", Index + 1); // accessible name
 }
 
 /// <summary>Wraps an outline entry so the TreeView shows its title.</summary>
@@ -169,7 +169,7 @@ public sealed partial class DocumentView : UserControl
         }
         catch (System.Runtime.InteropServices.COMException ex)
         {
-            ShowPrintResult(InfoBarSeverity.Error, "No se pudo imprimir", ex.Message);
+            ShowPrintResult(InfoBarSeverity.Error, Loc.Get("PrintFailed"), ex.Message);
             return;
         }
         if (job is null) return;
@@ -179,17 +179,17 @@ public sealed partial class DocumentView : UserControl
             var cts = _printCts = new CancellationTokenSource();
             int total = job.Pages.Count;
             PrintBar.Severity = InfoBarSeverity.Informational;
-            PrintBar.Title = "Imprimiendo";
-            PrintBar.Message = $"0 de {total} páginas";
+            PrintBar.Title = Loc.Get("Printing");
+            PrintBar.Message = Loc.Format("PrintProgress", 0, total);
             PrintCancelButton.Visibility = Visibility.Visible;
             PrintBar.IsOpen = true;
-            var progress = new Progress<int>(done => PrintBar.Message = $"{done} de {total} páginas");
+            var progress = new Progress<int>(done => PrintBar.Message = Loc.Format("PrintProgress", done, total));
             try
             {
                 var document = Document;
                 string name = Title;
                 await Task.Run(() => PrintService.Print(document, name, job, progress, cts.Token));
-                ShowPrintResult(InfoBarSeverity.Success, "Enviado a la impresora", $"{total} páginas");
+                ShowPrintResult(InfoBarSeverity.Success, Loc.Get("PrintDone"), Loc.Format("PrintDonePages", total));
             }
             catch (OperationCanceledException)
             {
@@ -197,7 +197,7 @@ public sealed partial class DocumentView : UserControl
             }
             catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or ObjectDisposedException)
             {
-                ShowPrintResult(InfoBarSeverity.Error, "No se pudo imprimir", ex.Message);
+                ShowPrintResult(InfoBarSeverity.Error, Loc.Get("PrintFailed"), ex.Message);
             }
             finally
             {
@@ -287,8 +287,8 @@ public sealed partial class DocumentView : UserControl
     private void UpdateSearchResultText()
     {
         if (string.IsNullOrEmpty(_lastQuery)) SearchResultText.Text = string.Empty;
-        else if (Viewer.MatchCount == 0) SearchResultText.Text = "Sin resultados";
-        else SearchResultText.Text = $"{Viewer.CurrentMatchIndex + 1} de {Viewer.MatchCount}";
+        else if (Viewer.MatchCount == 0) SearchResultText.Text = Loc.Get("NoResults");
+        else SearchResultText.Text = Loc.Format("MatchPosition", Viewer.CurrentMatchIndex + 1, Viewer.MatchCount);
     }
 
     // --- sidebar

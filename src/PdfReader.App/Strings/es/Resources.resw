@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from one table so every language has the same keys (checked by LocalizationTests). -->
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="EmptyTitle.Text" xml:space="preserve"><value>Abre un PDF para empezar</value></data>
+  <data name="EmptyHint.Text" xml:space="preserve"><value>También puedes arrastrar archivos a esta ventana.</value></data>
+  <data name="OpenButton.Content" xml:space="preserve"><value>Abrir PDF… (Ctrl+O)</value></data>
+  <data name="DefaultAppLink.Content" xml:space="preserve"><value>Usar como lector de PDF predeterminado</value></data>
+  <data name="DefaultAppLink.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Abre Configuración &gt; Aplicaciones predeterminadas. Busca .pdf y elige Lector PDF.</value></data>
+  <data name="RecentHeader.Text" xml:space="preserve"><value>Recientes</value></data>
+  <data name="RemoveRecent.Text" xml:space="preserve"><value>Quitar de la lista</value></data>
+  <data name="ShowInFolder.Text" xml:space="preserve"><value>Abrir ubicación del archivo</value></data>
+  <data name="ExitFullScreenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Salir de pantalla completa</value></data>
+  <data name="ExitFullScreenButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Salir de pantalla completa (Esc)</value></data>
+  <data name="ExitFullScreenText.Text" xml:space="preserve"><value>Salir de pantalla completa</value></data>
+  <data name="SidebarToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Panel lateral</value></data>
+  <data name="SidebarToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Panel lateral</value></data>
+  <data name="BackButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Atrás</value></data>
+  <data name="BackButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Atrás (Alt+←)</value></data>
+  <data name="ForwardButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Adelante</value></data>
+  <data name="ForwardButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Adelante (Alt+→)</value></data>
+  <data name="PageBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Número de página</value></data>
+  <data name="PageBox.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Ir a la página (Ctrl+G)</value></data>
+  <data name="ZoomOutButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Alejar</value></data>
+  <data name="ZoomOutButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Alejar (Ctrl+-)</value></data>
+  <data name="ZoomInButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Acercar</value></data>
+  <data name="ZoomInButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Acercar (Ctrl++)</value></data>
+  <data name="FitWidthButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Ajustar al ancho</value></data>
+  <data name="FitWidthButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Ajustar al ancho (Ctrl+0)</value></data>
+  <data name="FitPageButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Página completa</value></data>
+  <data name="FitPageButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Página completa</value></data>
+  <data name="PrintButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Imprimir</value></data>
+  <data name="PrintButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Imprimir (Ctrl+P)</value></data>
+  <data name="NightToggle.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Modo noche</value></data>
+  <data name="NightToggle.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Modo noche</value></data>
+  <data name="FullScreenButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Pantalla completa</value></data>
+  <data name="FullScreenButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Pantalla completa (F11)</value></data>
+  <data name="SearchBox.PlaceholderText" xml:space="preserve"><value>Buscar (Ctrl+F)</value></data>
+  <data name="SearchBox.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Buscar</value></data>
+  <data name="PreviousMatchButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Anterior</value></data>
+  <data name="PreviousMatchButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Anterior (Mayús+F3)</value></data>
+  <data name="NextMatchButton.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Siguiente</value></data>
+  <data name="NextMatchButton.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Siguiente (F3)</value></data>
+  <data name="ThumbnailsTab.Text" xml:space="preserve"><value>Miniaturas</value></data>
+  <data name="OutlineTab.Text" xml:space="preserve"><value>Índice</value></data>
+  <data name="NoOutlineText.Text" xml:space="preserve"><value>Este documento no tiene índice.</value></data>
+  <data name="PrintCancelButton.Content" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="AppName" xml:space="preserve"><value>Lector PDF</value></data>
+  <data name="WindowTitle" xml:space="preserve"><value>{0} - Lector PDF</value></data>
+  <data name="PdfDocument" xml:space="preserve"><value>Documento PDF</value></data>
+  <data name="DropCaption" xml:space="preserve"><value>Abrir PDF</value></data>
+  <data name="Today" xml:space="preserve"><value>Hoy, {0:t}</value></data>
+  <data name="Yesterday" xml:space="preserve"><value>Ayer, {0:t}</value></data>
+  <data name="PasswordTitle" xml:space="preserve"><value>Documento protegido</value></data>
+  <data name="PasswordPrompt" xml:space="preserve"><value>"{0}" está protegido con contraseña.</value></data>
+  <data name="PasswordRetry" xml:space="preserve"><value>La contraseña no es correcta. Inténtalo de nuevo.</value></data>
+  <data name="PasswordPlaceholder" xml:space="preserve"><value>Contraseña</value></data>
+  <data name="Open" xml:space="preserve"><value>Abrir</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Ok" xml:space="preserve"><value>Aceptar</value></data>
+  <data name="OpenErrorTitle" xml:space="preserve"><value>No se pudo abrir "{0}"</value></data>
+  <data name="OpenError_FileNotFound" xml:space="preserve"><value>No se pudo abrir el archivo. Puede que se haya movido, borrado o esté en uso.</value></data>
+  <data name="OpenError_InvalidFormat" xml:space="preserve"><value>El archivo no es un PDF válido o está dañado.</value></data>
+  <data name="OpenError_UnsupportedSecurity" xml:space="preserve"><value>El documento usa un esquema de seguridad que no es compatible.</value></data>
+  <data name="OpenError_Unknown" xml:space="preserve"><value>No se pudo cargar el documento.</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>Error inesperado: {0}</value></data>
+  <data name="PageName" xml:space="preserve"><value>Página {0}</value></data>
+  <data name="NoResults" xml:space="preserve"><value>Sin resultados</value></data>
+  <data name="MatchPosition" xml:space="preserve"><value>{0} de {1}</value></data>
+  <data name="Printing" xml:space="preserve"><value>Imprimiendo</value></data>
+  <data name="PrintProgress" xml:space="preserve"><value>{0} de {1} páginas</value></data>
+  <data name="PrintDone" xml:space="preserve"><value>Enviado a la impresora</value></data>
+  <data name="PrintDonePages" xml:space="preserve"><value>{0} páginas</value></data>
+  <data name="PrintFailed" xml:space="preserve"><value>No se pudo imprimir</value></data>
+  <data name="PrintDialogFailed" xml:space="preserve"><value>No se pudo mostrar el diálogo de impresión.</value></data>
+  <data name="PrintRejected" xml:space="preserve"><value>La impresora no aceptó el trabajo.</value></data>
+  <data name="PrintError" xml:space="preserve"><value>La impresora informó de un error.</value></data>
+</root>

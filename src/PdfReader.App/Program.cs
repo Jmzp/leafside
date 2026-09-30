@@ -18,6 +18,14 @@ public static partial class Program
     {
         WinRT.ComWrappersSupport.InitializeComWrappers();
 
+        // The UI follows the Windows display language (unpackaged apps must tell MRT explicitly, or resources
+        // resolve to the default language); PDFREADER_LANGUAGE (e.g. "en-US", "es") forces one.
+        string language = Environment.GetEnvironmentVariable("PDFREADER_LANGUAGE") is { Length: > 0 } forced
+            ? forced
+            : System.Globalization.CultureInfo.CurrentUICulture.Name;
+        if (language.Length > 0)
+            Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = language;
+
         if (args.Contains("--unregister"))
         {
             Services.FileAssociation.Unregister();

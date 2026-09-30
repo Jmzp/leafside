@@ -26,7 +26,7 @@ public partial class App : Application
     {
         _window = new MainWindow();
         _window.Activate();
-        // Files passed on the command line (e.g. "Abrir con" from Explorer).
+        // Files passed on the command line (e.g. "Open with" in Explorer).
         var arguments = Environment.GetCommandLineArgs().Skip(1).ToList();
         if (arguments.Contains("--bench") && CommandLine.Files(arguments, File.Exists).FirstOrDefault() is { } benchFile)
         {

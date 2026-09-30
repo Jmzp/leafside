@@ -93,7 +93,7 @@ public sealed class PdfiumDocumentTests : IDisposable
     {
         using var doc = PdfiumDocument.Open(_path);
         var outline = doc.GetOutline();
-        Assert.Equal(["Capitulo 1", "Capitulo 2", "Capitulo 3"], outline.Select(o => o.Title));
+        Assert.Equal(["Chapter 1", "Chapter 2", "Chapter 3"], outline.Select(o => o.Title));
         Assert.Equal([0, 1, 2], outline.Select(o => o.PageIndex));
 
         // Link rect is [0 0 100 100] in PDF space = bottom-left corner of the page.

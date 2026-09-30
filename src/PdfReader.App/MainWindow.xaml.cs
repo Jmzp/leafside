@@ -108,6 +108,11 @@ public sealed partial class MainWindow : Window
                     ErrorLog.Write(ex);
                 return;
             }
+            catch (PdfOpenException ex)
+            {
+                await ShowErrorAsync(Path.GetFileName(path), Loc.Get($"OpenError_{ex.Error}"));
+                return;
+            }
             catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
             {
                 await ShowErrorAsync(Path.GetFileName(path), ex.Message);
@@ -116,14 +121,14 @@ public sealed partial class MainWindow : Window
             catch (Exception ex)
             {
                 ErrorLog.Write(ex);
-                await ShowErrorAsync(Path.GetFileName(path), $"Error inesperado: {ex.Message}");
+                await ShowErrorAsync(Path.GetFileName(path), Loc.Format("UnexpectedError", ex.Message));
                 return;
             }
         }
     }
 
     public Task<string> RunBenchmarkAsync() =>
-        SelectedView is { } view ? view.RunBenchmarkAsync() : Task.FromResult("Sin documento.");
+        SelectedView is { } view ? view.RunBenchmarkAsync() : Task.FromResult("No document.");
 
     private void AddTab(IPdfDocument document, bool select)
     {
@@ -167,7 +172,7 @@ public sealed partial class MainWindow : Window
             view.Visibility = view == selected ? Visibility.Visible : Visibility.Collapsed;
             view.IsEnabled = view == selected;
         }
-        Title = selected is not null ? $"{selected.Title} - Lector PDF" : "Lector PDF";
+        Title = selected is not null ? Loc.Format("WindowTitle", selected.Title) : Loc.Get("AppName");
     }
 
     /// <summary>Keeps the list of open tabs in the saved state, so the next launch can restore them.</summary>
@@ -194,10 +199,10 @@ public sealed partial class MainWindow : Window
     private static string FormatWhen(DateTime utc)
     {
         var local = utc.ToLocalTime();
-        var culture = CultureInfo.GetCultureInfo("es-ES");
-        if (local.Date == DateTime.Today) return $"Hoy, {local:HH:mm}";
-        if (local.Date == DateTime.Today.AddDays(-1)) return $"Ayer, {local:HH:mm}";
-        return local.Year == DateTime.Today.Year ? local.ToString("d MMM", culture) : local.ToString("d MMM yyyy", culture);
+        var culture = CultureInfo.CurrentCulture;
+        if (local.Date == DateTime.Today) return Loc.Format("Today", local);
+        if (local.Date == DateTime.Today.AddDays(-1)) return Loc.Format("Yesterday", local);
+        return local.Year == DateTime.Today.Year ? local.ToString("M", culture) : local.ToString("d", culture);
     }
 
     private void OnRecentClicked(object sender, ItemClickEventArgs e)
@@ -300,21 +305,21 @@ public sealed partial class MainWindow : Window
 
     private async Task<string?> AskPasswordAsync(string fileName, bool retry)
     {
-        var box = new PasswordBox { PlaceholderText = "Contraseña" };
+        var box = new PasswordBox { PlaceholderText = Loc.Get("PasswordPlaceholder") };
         var content = new StackPanel { Spacing = 8 };
         content.Children.Add(new TextBlock
         {
-            Text = retry ? "La contraseña no es correcta. Inténtalo de nuevo." : $"\"{fileName}\" está protegido con contraseña.",
+            Text = retry ? Loc.Get("PasswordRetry") : Loc.Format("PasswordPrompt", fileName),
             TextWrapping = TextWrapping.Wrap,
         });
         content.Children.Add(box);
         var dialog = new ContentDialog
         {
             XamlRoot = Content.XamlRoot,
-            Title = "Documento protegido",
+            Title = Loc.Get("PasswordTitle"),
             Content = content,
-            PrimaryButtonText = "Abrir",
-            CloseButtonText = "Cancelar",
+            PrimaryButtonText = Loc.Get("Open"),
+            CloseButtonText = Loc.Get("Cancel"),
             DefaultButton = ContentDialogButton.Primary,
         };
         dialog.Opened += (_, _) => box.Focus(FocusState.Programmatic);
@@ -326,9 +331,9 @@ public sealed partial class MainWindow : Window
         await new ContentDialog
         {
             XamlRoot = Content.XamlRoot,
-            Title = $"No se pudo abrir \"{fileName}\"",
+            Title = Loc.Format("OpenErrorTitle", fileName),
             Content = message,
-            CloseButtonText = "Aceptar",
+            CloseButtonText = Loc.Get("Ok"),
         }.ShowAsync();
     }
 
@@ -365,7 +370,7 @@ public sealed partial class MainWindow : Window
         if (e.DataView.Contains(StandardDataFormats.StorageItems))
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
-            e.DragUIOverride.Caption = "Abrir PDF";
+            e.DragUIOverride.Caption = Loc.Get("DropCaption");
         }
     }
 

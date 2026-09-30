@@ -15,6 +15,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TieredPGO>true</TieredPGO>
     <SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>
+    <!-- UI strings: Strings/en-US (default) and Strings/es. -->
+    <DefaultLanguage>en-US</DefaultLanguage>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- Program.cs provides Main (single instance). -->
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>

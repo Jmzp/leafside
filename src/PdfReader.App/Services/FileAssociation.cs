@@ -10,7 +10,9 @@ namespace PdfReader.App.Services;
 /// </summary>
 public static partial class FileAssociation
 {
-    private const string ProgId = "LectorPDF.Document";
+    private const string ProgId = "PdfReader.Document";
+    /// <summary>ProgID used by the first test builds; removed when found.</summary>
+    private const string LegacyProgId = "LectorPDF.Document";
     private const string AppKey = @"Applications\PdfReader.exe";
     private const string ClassesKey = @"Software\Classes";
 
@@ -19,6 +21,7 @@ public static partial class FileAssociation
         string exe = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "PdfReader.exe");
         string command = $"\"{exe}\" \"%1\"";
         using var classes = Registry.CurrentUser.CreateSubKey(ClassesKey);
+        RemoveProgId(classes, LegacyProgId);
         using (var existing = classes.OpenSubKey($@"{ProgId}\shell\open\command"))
         {
             if (existing?.GetValue("") as string == command) return; // up to date: touch nothing
@@ -26,8 +29,8 @@ public static partial class FileAssociation
 
         using (var prog = classes.CreateSubKey(ProgId))
         {
-            prog.SetValue("", "Documento PDF");
-            prog.SetValue("FriendlyTypeName", "Documento PDF");
+            prog.SetValue("", Loc.Get("PdfDocument"));
+            prog.SetValue("FriendlyTypeName", Loc.Get("PdfDocument"));
             using (var icon = prog.CreateSubKey("DefaultIcon")) icon.SetValue("", $"\"{exe}\",0");
             using (var open = prog.CreateSubKey(@"shell\open\command")) open.SetValue("", command);
         }
@@ -35,7 +38,7 @@ public static partial class FileAssociation
             openWith.SetValue(ProgId, Array.Empty<byte>(), RegistryValueKind.None);
         using (var app = classes.CreateSubKey(AppKey))
         {
-            app.SetValue("FriendlyAppName", "Lector PDF");
+            app.SetValue("FriendlyAppName", Loc.Get("AppName"));
             using (var types = app.CreateSubKey("SupportedTypes")) types.SetValue(".pdf", "");
             using (var open = app.CreateSubKey(@"shell\open\command")) open.SetValue("", command);
         }
@@ -47,11 +50,17 @@ public static partial class FileAssociation
     {
         using var classes = Registry.CurrentUser.OpenSubKey(ClassesKey, writable: true);
         if (classes is null) return;
-        classes.DeleteSubKeyTree(ProgId, throwOnMissingSubKey: false);
+        RemoveProgId(classes, ProgId);
+        RemoveProgId(classes, LegacyProgId);
         classes.DeleteSubKeyTree(AppKey, throwOnMissingSubKey: false);
-        using (var openWith = classes.OpenSubKey(@".pdf\OpenWithProgids", writable: true))
-            openWith?.DeleteValue(ProgId, throwOnMissingValue: false);
         NotifyShell();
+    }
+
+    private static void RemoveProgId(RegistryKey classes, string progId)
+    {
+        classes.DeleteSubKeyTree(progId, throwOnMissingSubKey: false);
+        using var openWith = classes.OpenSubKey(@".pdf\OpenWithProgids", writable: true);
+        openWith?.DeleteValue(progId, throwOnMissingValue: false);
     }
 
     private static void NotifyShell() => SHChangeNotify(SHCNE_ASSOCCHANGED, 0, IntPtr.Zero, IntPtr.Zero);

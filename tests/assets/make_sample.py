@@ -4,7 +4,7 @@ import math, random, zlib
 PAGES = 300
 random.seed(1)
 words = ("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore "
-         "et dolore magna aliqua surface arm lector pdf fluido desplazamiento zoom pagina").split()
+         "et dolore magna aliqua surface arm reader pdf smooth scrolling zoom page").split()
 
 objs = {}
 def obj(n, body): objs[n] = body
@@ -26,20 +26,20 @@ for i in range(PAGES):
                    f"{x+random.uniform(-60,60):.1f} {y+random.uniform(-60,60):.1f} "
                    f"{x+random.uniform(-60,60):.1f} {y+random.uniform(-60,60):.1f} c S")
     ops.append("Q")
-    ops.append(f"BT /F2 22 Tf 56 740 Td (Capitulo {i+1}) Tj ET")
+    ops.append(f"BT /F2 22 Tf 56 740 Td (Chapter {i+1}) Tj ET")
     y = 710
     while y > 350:
         line = " ".join(random.choice(words) for _ in range(11))
         ops.append(f"BT /F1 10 Tf 56 {y} Td ({line}) Tj ET")
         y -= 13
-    ops.append(f"BT /F1 9 Tf 290 30 Td (Pagina {i+1} de {PAGES}) Tj ET")
+    ops.append(f"BT /F1 9 Tf 290 30 Td (Page {i+1} of {PAGES}) Tj ET")
     data = zlib.compress("\n".join(ops).encode("latin-1"))
     obj(content_ids[i], (f"<< /Length {len(data)} /Filter /FlateDecode >>\nstream\n".encode() + data + b"\nendstream"))
     annots = f" /Annots [{n} 0 R]" if i == 0 else ""
     obj(page_ids[i], f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {content_ids[i]} 0 R{annots} >>")
     prev = f" /Prev {outline_ids[i-1]} 0 R" if i else ""
     nxt = f" /Next {outline_ids[i+1]} 0 R" if i < PAGES - 1 else ""
-    obj(outline_ids[i], f"<< /Title (Capitulo {i+1}) /Parent {n+1} 0 R{prev}{nxt} /Dest [{page_ids[i]} 0 R /XYZ null null null] >>")
+    obj(outline_ids[i], f"<< /Title (Chapter {i+1}) /Parent {n+1} 0 R{prev}{nxt} /Dest [{page_ids[i]} 0 R /XYZ null null null] >>")
 
 obj(n, f"<< /Type /Annot /Subtype /Link /Rect [56 730 250 765] /Border [0 0 0] /Dest [{page_ids[PAGES-1]} 0 R /Fit] >>")
 obj(n + 1, f"<< /Type /Outlines /First {outline_ids[0]} 0 R /Last {outline_ids[-1]} 0 R /Count {PAGES} >>")
