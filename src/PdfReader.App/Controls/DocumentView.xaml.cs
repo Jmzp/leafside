@@ -74,6 +74,7 @@ public sealed partial class DocumentView : UserControl
     public void Close()
     {
         SaveViewState();
+        _printCts?.Cancel();
         AppState.NightModeChanged -= OnNightModeChanged;
         Viewer.Close(); // also disposes the document
     }
@@ -133,6 +134,89 @@ public sealed partial class DocumentView : UserControl
     private void OnForward(object sender, RoutedEventArgs e) { Viewer.GoForward(); FocusViewer(); }
     private void OnBackAccelerator(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { Viewer.GoBack(); e.Handled = true; }
     private void OnForwardAccelerator(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { Viewer.GoForward(); e.Handled = true; }
+
+    // --- printing
+
+    private CancellationTokenSource? _printCts;
+    private bool _printBusy; // dialog open or job running: one at a time
+
+    private void OnPrint(object sender, RoutedEventArgs e) => _ = PrintAsync();
+    private void OnPrintAccelerator(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { _ = PrintAsync(); e.Handled = true; }
+    private void OnCancelPrint(object sender, RoutedEventArgs e) => _printCts?.Cancel();
+
+    private async Task PrintAsync()
+    {
+        if (_printBusy || XamlRoot is null) return;
+        _printBusy = true;
+        try
+        {
+            await PrintCoreAsync();
+        }
+        finally
+        {
+            _printBusy = false;
+        }
+    }
+
+    private async Task PrintCoreAsync()
+    {
+        // The dialog is modal but keeps pumping messages, so this method can be re-entered; _printBusy prevents that.
+        var owner = Microsoft.UI.Win32Interop.GetWindowFromWindowId(XamlRoot.ContentIslandEnvironment.AppWindowId);
+        PrintJob? job;
+        try
+        {
+            job = PrintService.ShowDialog(owner, Document.PageCount, Math.Max(0, Viewer.CurrentPage));
+        }
+        catch (System.Runtime.InteropServices.COMException ex)
+        {
+            ShowPrintResult(InfoBarSeverity.Error, "No se pudo imprimir", ex.Message);
+            return;
+        }
+        if (job is null) return;
+
+        using (job)
+        {
+            var cts = _printCts = new CancellationTokenSource();
+            int total = job.Pages.Count;
+            PrintBar.Severity = InfoBarSeverity.Informational;
+            PrintBar.Title = "Imprimiendo";
+            PrintBar.Message = $"0 de {total} páginas";
+            PrintCancelButton.Visibility = Visibility.Visible;
+            PrintBar.IsOpen = true;
+            var progress = new Progress<int>(done => PrintBar.Message = $"{done} de {total} páginas");
+            try
+            {
+                var document = Document;
+                string name = Title;
+                await Task.Run(() => PrintService.Print(document, name, job, progress, cts.Token));
+                ShowPrintResult(InfoBarSeverity.Success, "Enviado a la impresora", $"{total} páginas");
+            }
+            catch (OperationCanceledException)
+            {
+                PrintBar.IsOpen = false;
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or IOException or ObjectDisposedException)
+            {
+                ShowPrintResult(InfoBarSeverity.Error, "No se pudo imprimir", ex.Message);
+            }
+            finally
+            {
+                _printCts = null;
+                cts.Dispose();
+            }
+        }
+    }
+
+    private async void ShowPrintResult(InfoBarSeverity severity, string title, string message)
+    {
+        PrintBar.Severity = severity;
+        PrintBar.Title = title;
+        PrintBar.Message = message;
+        PrintCancelButton.Visibility = Visibility.Collapsed;
+        PrintBar.IsOpen = true;
+        await Task.Delay(TimeSpan.FromSeconds(severity == InfoBarSeverity.Error ? 8 : 4));
+        if (_printCts is null) PrintBar.IsOpen = false;
+    }
 
     // --- night mode
 

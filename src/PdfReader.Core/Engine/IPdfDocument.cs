@@ -41,6 +41,12 @@ public interface IPdfDocument : IDisposable
     /// </summary>
     RenderedBitmap Render(int pageIndex, double scale, int regionX, int regionY, int regionWidth, int regionHeight);
 
+    /// <summary>
+    /// Draws a page onto a Windows GDI device context (a printer), as vectors where possible, into the device
+    /// rectangle (x, y, width, height). <paramref name="rotate"/> is in quarter turns clockwise (0-3).
+    /// </summary>
+    void RenderToDC(int pageIndex, nint hdc, int x, int y, int width, int height, int rotate);
+
     IReadOnlyList<OutlineItem> GetOutline();
     LinkTarget? GetLinkAt(int pageIndex, double x, double y);
 

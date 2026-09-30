@@ -101,6 +101,15 @@ public sealed unsafe class PdfiumDocument : IPdfDocument
         return new RenderedBitmap(pixels, regionWidth, regionHeight);
     }
 
+    public void RenderToDC(int pageIndex, nint hdc, int x, int y, int width, int height, int rotate)
+    {
+        lock (Sync)
+        {
+            var page = GetPage(pageIndex).Page;
+            FPDF_RenderPage(hdc, page, x, y, width, height, rotate, FPDF_ANNOT | FPDF_PRINTING);
+        }
+    }
+
     public IReadOnlyList<OutlineItem> GetOutline()
     {
         lock (Sync)

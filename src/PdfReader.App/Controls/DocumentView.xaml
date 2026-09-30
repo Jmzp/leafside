@@ -13,6 +13,7 @@
         <KeyboardAccelerator Modifiers="Control" Key="Number0" Invoked="OnFitWidthAccelerator" />
         <KeyboardAccelerator Modifiers="Control" Key="G" Invoked="OnGoToPageAccelerator" />
         <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackAccelerator" />
+        <KeyboardAccelerator Modifiers="Control" Key="P" Invoked="OnPrintAccelerator" />
         <KeyboardAccelerator Modifiers="Menu" Key="Right" Invoked="OnForwardAccelerator" />
     </UserControl.KeyboardAccelerators>
 
@@ -63,6 +64,9 @@
                     <FontIcon Glyph="&#xE9A8;" FontSize="16" />
                 </Button>
                 <AppBarSeparator />
+                <Button Click="OnPrint" AutomationProperties.Name="Imprimir" ToolTipService.ToolTip="Imprimir (Ctrl+P)" Padding="8,6">
+                    <FontIcon Glyph="&#xE749;" FontSize="16" />
+                </Button>
                 <ToggleButton x:Name="NightToggle" Click="OnNightModeClick" AutomationProperties.Name="Modo noche"
                               ToolTipService.ToolTip="Modo noche" Padding="8,6">
                     <FontIcon Glyph="&#xE708;" FontSize="16" />
@@ -133,6 +137,12 @@
 
             <Grid Grid.Column="1" Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}">
                 <local:PdfViewer x:Name="Viewer" />
+                <InfoBar x:Name="PrintBar" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="16" MinWidth="320"
+                         IsClosable="False" Title="Imprimiendo">
+                    <InfoBar.ActionButton>
+                        <Button x:Name="PrintCancelButton" Content="Cancelar" Click="OnCancelPrint" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
             </Grid>
         </Grid>
     </Grid>

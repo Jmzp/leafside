@@ -27,6 +27,7 @@ internal static unsafe partial class PdfiumNative
     public const int FPDF_ERR_PASSWORD = 4;
     public const int FPDF_ANNOT = 0x01;
     public const int FPDF_LCD_TEXT = 0x02;
+    public const int FPDF_PRINTING = 0x800;
     public const int FPDFBitmap_BGRA = 4;
     public const uint FPDF_MATCHCASE = 0x1;
     public const uint FPDF_MATCHWHOLEWORD = 0x2;
@@ -52,6 +53,8 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Lib)] public static partial int FPDFBitmap_FillRect(nint bitmap, int left, int top, int width, int height, uint color);
     [LibraryImport(Lib)] public static partial void FPDFBitmap_Destroy(nint bitmap);
     [LibraryImport(Lib)] public static partial void FPDF_RenderPageBitmap(nint bitmap, nint page, int startX, int startY, int sizeX, int sizeY, int rotate, int flags);
+    /// <summary>Windows only: draws a page onto a GDI device context (vector output, used for printing).</summary>
+    [LibraryImport(Lib)] public static partial void FPDF_RenderPage(nint dc, nint page, int startX, int startY, int sizeX, int sizeY, int rotate, int flags);
 
     [LibraryImport(Lib)]
     public static partial int FPDF_DeviceToPage(nint page, int startX, int startY, int sizeX, int sizeY, int rotate, int deviceX, int deviceY, out double pageX, out double pageY);

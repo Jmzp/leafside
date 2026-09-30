@@ -45,6 +45,11 @@ public sealed class ThumbnailView : Grid
         }
         catch (OperationCanceledException) { }
         catch (ObjectDisposedException) { }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // async void: never let a failed thumbnail (e.g. GPU device lost while closing) take the app down.
+            System.Diagnostics.Debug.WriteLine($"Thumbnail {pageIndex} failed: {ex.Message}");
+        }
     }
 
     public void Clear()
