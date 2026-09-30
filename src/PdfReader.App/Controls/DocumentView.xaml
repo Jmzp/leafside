@@ -21,7 +21,7 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
-        <Grid Padding="8,4" ColumnSpacing="4" Background="{ThemeResource LayerFillColorDefaultBrush}"
+        <Grid x:Name="Toolbar" Padding="8,4" ColumnSpacing="4" Background="{ThemeResource LayerFillColorDefaultBrush}"
               BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -30,7 +30,7 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                <ToggleButton x:Name="SidebarToggle" IsChecked="True" ToolTipService.ToolTip="Panel lateral"
+                <ToggleButton x:Name="SidebarToggle" IsChecked="True" AutomationProperties.Name="Panel lateral" ToolTipService.ToolTip="Panel lateral"
                               Checked="OnSidebarToggled" Unchecked="OnSidebarToggled" Padding="8,6">
                     <FontIcon Glyph="&#xE700;" FontSize="16" />
                 </ToggleButton>
@@ -39,18 +39,22 @@
                          LostFocus="OnPageBoxLostFocus" ToolTipService.ToolTip="Ir a la página (Ctrl+G)" />
                 <TextBlock x:Name="PageCountText" VerticalAlignment="Center" Margin="4,0,8,0" />
                 <AppBarSeparator />
-                <Button Click="OnZoomOut" ToolTipService.ToolTip="Alejar (Ctrl+-)" Padding="8,6">
+                <Button Click="OnZoomOut" AutomationProperties.Name="Alejar" ToolTipService.ToolTip="Alejar (Ctrl+-)" Padding="8,6">
                     <FontIcon Glyph="&#xE71F;" FontSize="16" />
                 </Button>
                 <TextBlock x:Name="ZoomText" Width="52" TextAlignment="Center" VerticalAlignment="Center" />
-                <Button Click="OnZoomIn" ToolTipService.ToolTip="Acercar (Ctrl++)" Padding="8,6">
+                <Button Click="OnZoomIn" AutomationProperties.Name="Acercar" ToolTipService.ToolTip="Acercar (Ctrl++)" Padding="8,6">
                     <FontIcon Glyph="&#xE8A3;" FontSize="16" />
                 </Button>
-                <Button Click="OnFitWidth" ToolTipService.ToolTip="Ajustar al ancho (Ctrl+0)" Padding="8,6">
+                <Button Click="OnFitWidth" AutomationProperties.Name="Ajustar al ancho" ToolTipService.ToolTip="Ajustar al ancho (Ctrl+0)" Padding="8,6">
                     <FontIcon Glyph="&#xE9A6;" FontSize="16" />
                 </Button>
-                <Button Click="OnFitPage" ToolTipService.ToolTip="Página completa" Padding="8,6">
+                <Button Click="OnFitPage" AutomationProperties.Name="Página completa" ToolTipService.ToolTip="Página completa" Padding="8,6">
                     <FontIcon Glyph="&#xE9A8;" FontSize="16" />
+                </Button>
+                <AppBarSeparator />
+                <Button Click="OnFullScreen" AutomationProperties.Name="Pantalla completa" ToolTipService.ToolTip="Pantalla completa (F11)" Padding="8,6">
+                    <FontIcon Glyph="&#xE740;" FontSize="16" />
                 </Button>
             </StackPanel>
 
@@ -59,10 +63,10 @@
                                 QuerySubmitted="OnSearchSubmitted" TextChanged="OnSearchTextChanged" />
                 <TextBlock x:Name="SearchResultText" VerticalAlignment="Center" MinWidth="64" TextAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <Button Click="OnPreviousMatch" ToolTipService.ToolTip="Anterior (Mayús+F3)" Padding="8,6">
+                <Button Click="OnPreviousMatch" AutomationProperties.Name="Anterior" ToolTipService.ToolTip="Anterior (Mayús+F3)" Padding="8,6">
                     <FontIcon Glyph="&#xE70E;" FontSize="14" />
                 </Button>
-                <Button Click="OnNextMatch" ToolTipService.ToolTip="Siguiente (F3)" Padding="8,6">
+                <Button Click="OnNextMatch" AutomationProperties.Name="Siguiente" ToolTipService.ToolTip="Siguiente (F3)" Padding="8,6">
                     <FontIcon Glyph="&#xE70D;" FontSize="14" />
                 </Button>
             </StackPanel>

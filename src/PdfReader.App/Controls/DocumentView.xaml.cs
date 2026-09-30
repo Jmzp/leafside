@@ -10,6 +10,7 @@ namespace PdfReader.App.Controls;
 public sealed record ThumbnailItem(int Index)
 {
     public string Label => (Index + 1).ToString();
+    public override string ToString() => $"Página {Index + 1}"; // accessible name
 }
 
 /// <summary>Wraps an outline entry so the TreeView shows its title.</summary>
@@ -44,6 +45,20 @@ public sealed partial class DocumentView : UserControl
 
     public IPdfDocument Document { get; }
     public string Title => Path.GetFileName(Document.FilePath);
+
+    /// <summary>Raised when the user asks to toggle full screen from the toolbar.</summary>
+    public event EventHandler? FullScreenRequested;
+
+    /// <summary>Toolbar and sidebar; hidden in full screen.</summary>
+    public bool IsChromeVisible
+    {
+        get => Toolbar.Visibility == Visibility.Visible;
+        set
+        {
+            Toolbar.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            ApplySidebarVisibility(value && SidebarToggle.IsChecked == true);
+        }
+    }
 
     /// <summary>Records the reading position (unless the viewer is still restoring it).</summary>
     public void SaveViewState()
@@ -156,10 +171,16 @@ public sealed partial class DocumentView : UserControl
     private void OnSidebarToggled(object sender, RoutedEventArgs e)
     {
         if (Sidebar is null) return; // raised while the XAML is still loading
-        bool show = SidebarToggle.IsChecked == true;
+        ApplySidebarVisibility(SidebarToggle.IsChecked == true);
+    }
+
+    private void ApplySidebarVisibility(bool show)
+    {
         Sidebar.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         SidebarColumn.Width = show ? new GridLength(200) : new GridLength(0);
     }
+
+    private void OnFullScreen(object sender, RoutedEventArgs e) => FullScreenRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnSidebarSelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
     {

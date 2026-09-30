@@ -53,6 +53,7 @@ public sealed partial class PdfViewer : UserControl
     private DocumentLayout? _layout;
     private RenderScheduler? _scheduler;
     private double _renderZoom = 1;
+    private double _reportedZoom = 1;
     private bool _zoomSettling;
     private bool _updateQueued;
     private int _currentPage = -1;
@@ -113,7 +114,7 @@ public sealed partial class PdfViewer : UserControl
         _restoreTimeout.Tick += (_, _) => FinishRestore();
 
         _scroll.ViewChanged += (_, _) => OnViewChanged();
-        _scroll.SizeChanged += (_, _) => OnViewportSizeChanged();
+        _scroll.SizeChanged += (_, e) => OnViewportSizeChanged(e.PreviousSize.Width);
         _panel.PointerPressed += OnPanelPointerPressed;
         _panel.PointerMoved += OnPanelPointerMoved;
         _panel.PointerReleased += OnPanelPointerReleased;
@@ -185,9 +186,16 @@ public sealed partial class PdfViewer : UserControl
         return surfaces;
     }
 
-    private void OnViewportSizeChanged()
+    private void OnViewportSizeChanged(double previousWidth)
     {
         if (_pendingInitialView is not null) ApplyInitialView();
+        else if (_layout is not null && previousWidth > 0 && _scroll.ActualWidth > 0)
+        {
+            // A document shown at "fit width" stays at fit width when the window, sidebar or full screen changes.
+            double previousFit = Math.Clamp(previousWidth / _layout.ContentWidth, MinZoom, MaxZoom);
+            if (Math.Abs(_scroll.ZoomFactor - previousFit) < 0.005 && Math.Abs(FitWidthZoom() - previousFit) > 0.001)
+                FitWidth();
+        }
         QueueUpdate();
     }
 
@@ -339,6 +347,10 @@ public sealed partial class PdfViewer : UserControl
             _zoomSettling = true;
             _zoomSettleTimer.Stop();
             _zoomSettleTimer.Start();
+        }
+        if (Math.Abs(zoom - _reportedZoom) > 1e-4)
+        {
+            _reportedZoom = zoom;
             ZoomChanged?.Invoke(this, zoom);
         }
         UpdateView();

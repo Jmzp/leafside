@@ -24,8 +24,7 @@ public partial class App : Application
             _ = RunBenchmarkAsync(_window, benchFile);
             return;
         }
-        foreach (var path in arguments.Where(File.Exists))
-            _ = _window.OpenFileAsync(path);
+        _ = _window.StartAsync(arguments.Where(File.Exists).ToList());
     }
 
     /// <summary>Opens a file, runs the scroll benchmark, writes %LocalAppData%\PdfReader\bench.log and exits.</summary>
