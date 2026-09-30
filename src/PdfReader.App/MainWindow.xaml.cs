@@ -217,6 +217,21 @@ public sealed partial class MainWindow : Window
             System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\"");
     }
 
+    /// <summary>Restores and focuses the window (another launch was redirected here).</summary>
+    public void BringToFront()
+    {
+        if (AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized } presenter) presenter.Restore();
+        Activate();
+        SetForegroundWindow(WinRT.Interop.WindowNative.GetWindowHandle(this));
+    }
+
+    [System.Runtime.InteropServices.LibraryImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static partial bool SetForegroundWindow(IntPtr hwnd);
+
+    private void OnDefaultAppClick(object sender, RoutedEventArgs e) =>
+        _ = Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:defaultapps"));
+
     // --- full screen
 
     private bool IsFullScreen => AppWindow.Presenter.Kind == AppWindowPresenterKind.FullScreen;

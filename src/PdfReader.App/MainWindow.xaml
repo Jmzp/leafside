@@ -35,6 +35,8 @@
                 <TextBlock Text="También puedes arrastrar archivos a esta ventana." HorizontalAlignment="Center"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                 <Button Content="Abrir PDF… (Ctrl+O)" Style="{ThemeResource AccentButtonStyle}" HorizontalAlignment="Center" Click="OnOpenClick" />
+                <HyperlinkButton Content="Usar como lector de PDF predeterminado" HorizontalAlignment="Center" Click="OnDefaultAppClick"
+                                 ToolTipService.ToolTip="Abre Configuración > Aplicaciones predeterminadas. Busca .pdf y elige Lector PDF." />
 
                 <StackPanel x:Name="RecentPanel" Spacing="4" Margin="0,16,0,0">
                     <TextBlock Text="Recientes" Style="{ThemeResource BodyStrongTextBlockStyle}" Margin="12,0" />

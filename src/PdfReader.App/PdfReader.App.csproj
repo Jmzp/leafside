@@ -16,6 +16,8 @@
     <TieredPGO>true</TieredPGO>
     <SatelliteResourceLanguages>es;en</SatelliteResourceLanguages>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <!-- Program.cs provides Main (single instance). -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Platform)' == 'ARM64'">
