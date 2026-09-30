@@ -162,7 +162,11 @@ public sealed partial class MainWindow : Window
         if (empty) UpdateRecentList();
         var selected = SelectedView;
         foreach (var view in DocumentViews())
+        {
+            // Hidden tabs stay loaded (instant switching) but disabled, so their shortcuts cannot fire.
             view.Visibility = view == selected ? Visibility.Visible : Visibility.Collapsed;
+            view.IsEnabled = view == selected;
+        }
         Title = selected is not null ? $"{selected.Title} - Lector PDF" : "Lector PDF";
     }
 

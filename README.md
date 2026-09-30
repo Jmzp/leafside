@@ -14,9 +14,20 @@ Lector de PDF nativo para Windows pensado para que el scroll y el zoom sean flui
 
 ## Funciones
 
-Pestañas, miniaturas, índice (marcadores), búsqueda (Ctrl+F, F3 / Mayús+F3), selección de texto con ratón/lápiz y copiar (Ctrl+C),
-enlaces internos y web, ir a página (Ctrl+G), zoom (pinch, Ctrl+rueda, Ctrl+/Ctrl-, Ctrl+0 ajustar al ancho), PDFs con contraseña,
-arrastrar y soltar, recuerda la última página de cada archivo.
+- **Lectura:** pestañas, miniaturas, índice (marcadores), enlaces internos y web, ir a página (Ctrl+G).
+- **Zoom:** pinch, Ctrl+rueda, Ctrl+/Ctrl-, Ctrl+0 ajustar al ancho, doble toque o doble clic.
+- **Texto:** búsqueda (Ctrl+F, F3 / Mayús+F3), selección con ratón o lápiz y copiar (Ctrl+C).
+- **Recuerda dónde ibas:** página, punto exacto dentro de la página y zoom de cada archivo; al abrir la app
+  reabre las pestañas de la última sesión. La pantalla de inicio muestra los archivos recientes.
+- **Atrás / Adelante** tras seguir un enlace, el índice o una búsqueda: Alt+← / Alt+→ o los botones laterales del ratón.
+- **Pantalla completa** (F11, Esc para salir) y **modo noche** (colores invertidos).
+- **Imprimir** (Ctrl+P): PDFium dibuja en vectorial directamente sobre la impresora, página a página.
+- **Explorador de Windows:** aparece en "Abrir con" para los .pdf (registro por usuario, sin permisos de
+  administrador) y abrir otro PDF lo añade como pestaña a la ventana ya abierta. `PdfReader.exe --unregister`
+  quita ese registro.
+- PDFs con contraseña, arrastrar y soltar.
+
+El estado se guarda en `%LocalAppData%\PdfReader\state.json`.
 
 ## Estructura
 
