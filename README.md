@@ -8,14 +8,14 @@
 
 Highlight, take notes, search and print — without lag, without ads, without an account.
 
-[![CI](https://github.com/Jmzp/winui-pdf-reader/actions/workflows/ci.yml/badge.svg)](https://github.com/Jmzp/winui-pdf-reader/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Jmzp/winui-pdf-reader)](https://github.com/Jmzp/winui-pdf-reader/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Jmzp/winui-pdf-reader/total)](https://github.com/Jmzp/winui-pdf-reader/releases)
+[![CI](https://github.com/Jmzp/leafside/actions/workflows/ci.yml/badge.svg)](https://github.com/Jmzp/leafside/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Jmzp/leafside)](https://github.com/Jmzp/leafside/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Jmzp/leafside/total)](https://github.com/Jmzp/leafside/releases)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 ![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 ![ARM64 and x64](https://img.shields.io/badge/arch-ARM64%20%7C%20x64-5C2D91)
 
-**[⬇️ Download the latest version](https://github.com/Jmzp/winui-pdf-reader/releases/latest)**
+**[⬇️ Download the latest version](https://github.com/Jmzp/leafside/releases/latest)**
 
 </div>
 
@@ -104,7 +104,7 @@ stay sharp at any zoom.
 
 ## ⬇️ Download
 
-Get the latest version from **[Releases](https://github.com/Jmzp/winui-pdf-reader/releases/latest)**:
+Get the latest version from **[Releases](https://github.com/Jmzp/leafside/releases/latest)**:
 
 | Device | Installer (recommended) | Portable zip |
 | --- | --- | --- |
@@ -209,7 +209,7 @@ placeholders. Set `PDFREADER_LANGUAGE=en-US` (or `es`) to force a language when 
 ## Data and privacy
 
 The only network request is the update check: once a day, LeafSide asks GitHub's public API for the latest
-release (`api.github.com/repos/Jmzp/winui-pdf-reader/releases/latest`). It sends nothing about you or your files,
+release (`api.github.com/repos/Jmzp/leafside/releases/latest`). It sends nothing about you or your files,
 only the app's name and version as the User-Agent. Downloads start only when you click the button, and the file's
 SHA-256 is checked against the one GitHub publishes. Turn the check off with *Check for updates automatically*
 on the start page.

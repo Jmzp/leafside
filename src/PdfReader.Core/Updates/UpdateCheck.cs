@@ -15,7 +15,7 @@ public sealed record UpdateRelease(Version Version, string Tag, string PageUrl, 
 /// </summary>
 public static class UpdateCheck
 {
-    public const string Repository = "Jmzp/winui-pdf-reader";
+    public const string Repository = "Jmzp/leafside";
     public const string LatestReleaseApi = $"https://api.github.com/repos/{Repository}/releases/latest";
     public const string ReleasesPage = $"https://github.com/{Repository}/releases/latest";
 

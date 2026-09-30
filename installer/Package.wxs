@@ -14,8 +14,8 @@
 
     <Icon Id="AppIcon" SourceFile="$(var.RepoRoot)\src\PdfReader.App\Assets\app.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
-    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Jmzp/winui-pdf-reader" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/Jmzp/winui-pdf-reader/issues" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Jmzp/leafside" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/Jmzp/leafside/issues" />
     <Property Id="ARPNOREPAIR" Value="1" />
 
     <!-- %LocalAppData%\Programs\LeafSide: the usual place for per-user apps. -->

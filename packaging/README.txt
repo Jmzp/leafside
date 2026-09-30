@@ -1,5 +1,5 @@
 LEAFSIDE, a fast PDF reader for Windows (x64 and ARM64)
-https://github.com/Jmzp/winui-pdf-reader
+https://github.com/Jmzp/leafside
 
 Tip: the .msi installer from the download page is easier (Start menu entry, uninstall from
 Settings > Apps). This zip is the portable version.

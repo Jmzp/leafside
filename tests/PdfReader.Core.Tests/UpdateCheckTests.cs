@@ -11,18 +11,18 @@ public class UpdateCheckTests
     private static string Release(string tag = "v1.2.0", bool draft = false, bool prerelease = false, string host = "github.com") => $$"""
         {
           "tag_name": "{{tag}}", "draft": {{(draft ? "true" : "false")}}, "prerelease": {{(prerelease ? "true" : "false")}},
-          "html_url": "https://github.com/Jmzp/winui-pdf-reader/releases/tag/{{tag}}",
+          "html_url": "https://github.com/Jmzp/leafside/releases/tag/{{tag}}",
           "body": "Notes",
           "assets": [
             { "name": "PdfReader-1.2.0-win-x64.msi", "size": 1000,
-              "browser_download_url": "https://{{host}}/Jmzp/winui-pdf-reader/releases/download/{{tag}}/PdfReader-1.2.0-win-x64.msi",
+              "browser_download_url": "https://{{host}}/Jmzp/leafside/releases/download/{{tag}}/PdfReader-1.2.0-win-x64.msi",
               "digest": "sha256:{{Sha.ToUpperInvariant()}}" },
             { "name": "PdfReader-1.2.0-win-x64.zip", "size": 2000,
-              "browser_download_url": "https://{{host}}/Jmzp/winui-pdf-reader/releases/download/{{tag}}/PdfReader-1.2.0-win-x64.zip" },
+              "browser_download_url": "https://{{host}}/Jmzp/leafside/releases/download/{{tag}}/PdfReader-1.2.0-win-x64.zip" },
             { "name": "PdfReader-1.2.0-win-arm64.msi", "size": 3000,
-              "browser_download_url": "https://{{host}}/Jmzp/winui-pdf-reader/releases/download/{{tag}}/PdfReader-1.2.0-win-arm64.msi" },
+              "browser_download_url": "https://{{host}}/Jmzp/leafside/releases/download/{{tag}}/PdfReader-1.2.0-win-arm64.msi" },
             { "name": "PdfReader-1.2.0-win-arm64.zip", "size": 4000,
-              "browser_download_url": "https://{{host}}/Jmzp/winui-pdf-reader/releases/download/{{tag}}/PdfReader-1.2.0-win-arm64.zip" }
+              "browser_download_url": "https://{{host}}/Jmzp/leafside/releases/download/{{tag}}/PdfReader-1.2.0-win-arm64.zip" }
           ]
         }
         """;
@@ -33,7 +33,7 @@ public class UpdateCheckTests
         var release = UpdateCheck.Parse(Release())!;
         Assert.Equal(new Version(1, 2, 0, 0), release.Version);
         Assert.Equal("v1.2.0", release.Tag);
-        Assert.Equal("https://github.com/Jmzp/winui-pdf-reader/releases/tag/v1.2.0", release.PageUrl);
+        Assert.Equal("https://github.com/Jmzp/leafside/releases/tag/v1.2.0", release.PageUrl);
         Assert.Equal(4, release.Assets.Count);
         Assert.Equal(Sha, release.Assets[0].Sha256);
         Assert.Null(release.Assets[1].Sha256);
