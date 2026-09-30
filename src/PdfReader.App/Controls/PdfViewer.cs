@@ -11,6 +11,7 @@ using PdfReader.App.Services;
 using PdfReader.Core.Engine;
 using PdfReader.Core.Layout;
 using PdfReader.Core.Rendering;
+using PdfReader.Core.State;
 using PdfReader.Core.Text;
 using Windows.ApplicationModel.DataTransfer;
 using Launcher = Windows.System.Launcher;
@@ -41,6 +42,7 @@ public sealed partial class PdfViewer : UserControl
     private readonly Compositor _compositor;
     private readonly SurfaceFactory _surfaces;
     private readonly DispatcherQueueTimer _zoomSettleTimer;
+    private readonly DispatcherQueueTimer _restoreTimeout;
     private readonly Dictionary<int, PageView> _realized = new();
     private readonly Stack<PageView> _pool = new();
     private readonly Dictionary<RequestKey, CancellationTokenSource> _inflight = new();
@@ -54,7 +56,11 @@ public sealed partial class PdfViewer : UserControl
     private bool _zoomSettling;
     private bool _updateQueued;
     private int _currentPage = -1;
-    private int? _pendingInitialPage;
+    // View restoration: the ScrollView may drop a ScrollTo issued together with a ZoomTo (or before its extent
+    // is known), so the target is re-applied from ViewChanged until the view actually gets there.
+    private ViewState? _pendingInitialView;
+    private (double Zoom, double X, double Y)? _restoreTarget;
+    private int _restoreAttempts;
 
     // Selection
     private readonly record struct TextPosition(int Page, int Char);
@@ -101,6 +107,11 @@ public sealed partial class PdfViewer : UserControl
         _zoomSettleTimer.IsRepeating = false;
         _zoomSettleTimer.Tick += (_, _) => OnZoomSettled();
 
+        _restoreTimeout = DispatcherQueue.CreateTimer();
+        _restoreTimeout.Interval = TimeSpan.FromSeconds(1);
+        _restoreTimeout.IsRepeating = false;
+        _restoreTimeout.Tick += (_, _) => FinishRestore();
+
         _scroll.ViewChanged += (_, _) => OnViewChanged();
         _scroll.SizeChanged += (_, _) => OnViewportSizeChanged();
         _panel.PointerPressed += OnPanelPointerPressed;
@@ -118,23 +129,27 @@ public sealed partial class PdfViewer : UserControl
     public int MatchCount => _matches.Count;
     public int CurrentMatchIndex => _currentMatch is null ? -1 : _matches.IndexOf(_currentMatch);
     public bool HasSelection => _selectionAnchor is not null && _selectionFocus is not null;
+    /// <summary>True until the initial (or a restored) position has been applied; the view is not meaningful yet.</summary>
+    public bool IsRestoringView => _pendingInitialView is not null || _restoreTarget is not null;
 
     public event EventHandler<int>? CurrentPageChanged;
     public event EventHandler<double>? ZoomChanged;
+    /// <summary>Raised when the reading position or zoom changed (never while a position is being restored).</summary>
+    public event EventHandler? ViewStateChanged;
     public event EventHandler? SearchResultsChanged;
     /// <summary>Raised on the UI thread when a page thumbnail becomes available.</summary>
     public event EventHandler<int>? ThumbnailReady;
 
     // ----------------------------------------------------------------- document lifetime
 
-    public void Open(IPdfDocument document, int initialPage = 0)
+    public void Open(IPdfDocument document, ViewState? initialView = null)
     {
         Close();
         _document = document;
         _scheduler = new RenderScheduler($"PDF render: {Path.GetFileName(document.FilePath)}");
         _layout = new DocumentLayout(Enumerable.Range(0, document.PageCount).Select(document.GetPageSize).ToList());
         _panel.Layout = _layout;
-        _pendingInitialPage = Math.Clamp(initialPage, 0, Math.Max(0, document.PageCount - 1));
+        _pendingInitialView = initialView ?? new ViewState(0);
         ApplyInitialView();
     }
 
@@ -158,6 +173,9 @@ public sealed partial class PdfViewer : UserControl
         _layout = null;
         _panel.Layout = null;
         _currentPage = -1;
+        _pendingInitialView = null;
+        _restoreTarget = null;
+        _restoreTimeout.Stop();
     }
 
     private IReadOnlyList<CompositionDrawingSurface> DrainThumbnails()
@@ -169,19 +187,68 @@ public sealed partial class PdfViewer : UserControl
 
     private void OnViewportSizeChanged()
     {
-        if (_pendingInitialPage is not null) ApplyInitialView();
+        if (_pendingInitialView is not null) ApplyInitialView();
         QueueUpdate();
     }
 
     private void ApplyInitialView()
     {
-        if (_layout is null || _pendingInitialPage is not { } page || _scroll.ActualWidth <= 0) return;
-        _pendingInitialPage = null;
-        double zoom = Math.Min(FitWidthZoom(), 2.0);
-        _renderZoom = zoom;
-        _scroll.ZoomTo((float)zoom, null, new ScrollingZoomOptions(ScrollingAnimationMode.Disabled));
-        _scroll.ScrollTo(0, Math.Max(0, (_layout.GetPageRect(page).Y - 8) * zoom), new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+        if (_layout is null || _pendingInitialView is not { } view || _scroll.ActualWidth <= 0) return;
+        _pendingInitialView = null;
+        RestoreView(view);
+    }
+
+    /// <summary>The current reading position, or null while there is none yet (no document, or restoring).</summary>
+    public ViewState? CaptureViewState()
+    {
+        if (_layout is null || IsRestoringView || _scroll.ViewportHeight <= 0) return null;
+        double zoom = _scroll.ZoomFactor;
+        var (page, fraction) = _layout.ToPagePosition(_scroll.VerticalOffset / zoom);
+        return new ViewState(page, Math.Round(fraction, 5), Math.Round(zoom, 4), Math.Round(_scroll.HorizontalOffset / zoom, 1));
+    }
+
+    /// <summary>Moves to a saved position. A zoom of 0 means "fit width" (capped at 200 %).</summary>
+    public void RestoreView(ViewState view)
+    {
+        if (_layout is null) return;
+        double zoom = view.Zoom > 0 ? Math.Clamp(view.Zoom, MinZoom, MaxZoom) : Math.Min(FitWidthZoom(), 2.0);
+        double y = _layout.FromPagePosition(view.Page, view.OffsetInPage);
+        _restoreTarget = (zoom, Math.Max(0, view.HorizontalOffset * zoom), Math.Max(0, y * zoom));
+        _restoreAttempts = 0;
+        _restoreTimeout.Stop();
+        _restoreTimeout.Start();
+        if (Math.Abs(_scroll.ZoomFactor - zoom) > 1e-4)
+        {
+            _renderZoom = zoom;
+            _scroll.ZoomTo((float)zoom, null, new ScrollingZoomOptions(ScrollingAnimationMode.Disabled));
+        }
+        IssueRestoreScroll();
+        CheckRestore();
         QueueUpdate();
+    }
+
+    private void IssueRestoreScroll()
+    {
+        if (_restoreTarget is not { } target) return;
+        _restoreAttempts++;
+        _scroll.ScrollTo(target.X, target.Y, new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+    }
+
+    private void CheckRestore()
+    {
+        if (_restoreTarget is not { } target || Math.Abs(_scroll.ZoomFactor - target.Zoom) > 1e-3) return;
+        double wantX = Math.Min(target.X, _scroll.ScrollableWidth), wantY = Math.Min(target.Y, _scroll.ScrollableHeight);
+        if (Math.Abs(_scroll.VerticalOffset - wantY) <= 1 && Math.Abs(_scroll.HorizontalOffset - wantX) <= 1) FinishRestore();
+        else if (_restoreAttempts < 4) IssueRestoreScroll();
+        else FinishRestore();
+    }
+
+    private void FinishRestore()
+    {
+        _restoreTimeout.Stop();
+        if (_restoreTarget is null) return;
+        _restoreTarget = null;
+        ViewStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ----------------------------------------------------------------- navigation & zoom
@@ -228,16 +295,13 @@ public sealed partial class PdfViewer : UserControl
 
     public void FitWidth()
     {
-        int page = _currentPage;
-        SetZoom(FitWidthZoom(), animate: false);
-        GoToPage(page);
+        if (CaptureViewState() is { } view) RestoreView(view with { Zoom = FitWidthZoom(), HorizontalOffset = 0 });
     }
 
     public void FitPage()
     {
-        int page = _currentPage;
-        SetZoom(FitPageZoom(), animate: false);
-        GoToPage(page);
+        // Show the whole current page, from its top.
+        if (_currentPage >= 0) RestoreView(new ViewState(_currentPage, -8 / _layout!.GetPageRect(_currentPage).Height, FitPageZoom()));
     }
 
     private void OnPreviewKeyDown(object sender, KeyRoutedEventArgs e)
@@ -278,6 +342,8 @@ public sealed partial class PdfViewer : UserControl
             ZoomChanged?.Invoke(this, zoom);
         }
         UpdateView();
+        if (_restoreTarget is not null) CheckRestore();
+        else if (_pendingInitialView is null) ViewStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnZoomSettled()

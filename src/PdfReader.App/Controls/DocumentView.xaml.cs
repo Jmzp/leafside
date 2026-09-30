@@ -33,7 +33,9 @@ public sealed partial class DocumentView : UserControl
         Viewer.CurrentPageChanged += (_, page) => OnCurrentPageChanged(page);
         Viewer.ZoomChanged += (_, zoom) => ZoomText.Text = $"{zoom:P0}";
         Viewer.SearchResultsChanged += (_, _) => UpdateSearchResultText();
-        Viewer.Open(document, ReaderState.GetLastPage(document.FilePath));
+        Viewer.ViewStateChanged += (_, _) => AppState.RequestSave();
+        Viewer.Open(document, AppState.Store.GetView(document.FilePath));
+        AppState.Store.Touch(document.FilePath);
         ZoomText.Text = $"{Viewer.ZoomFactor:P0}";
 
         ThumbnailList.ItemsSource = Enumerable.Range(0, document.PageCount).Select(i => new ThumbnailItem(i)).ToList();
@@ -43,9 +45,15 @@ public sealed partial class DocumentView : UserControl
     public IPdfDocument Document { get; }
     public string Title => Path.GetFileName(Document.FilePath);
 
+    /// <summary>Records the reading position (unless the viewer is still restoring it).</summary>
+    public void SaveViewState()
+    {
+        if (Viewer.CaptureViewState() is { } view) AppState.Store.SetView(Document.FilePath, view);
+    }
+
     public void Close()
     {
-        if (Viewer.CurrentPage >= 0) ReaderState.SetLastPage(Document.FilePath, Viewer.CurrentPage);
+        SaveViewState();
         Viewer.Close(); // also disposes the document
     }
 
@@ -56,7 +64,6 @@ public sealed partial class DocumentView : UserControl
     private void OnCurrentPageChanged(int page)
     {
         if (!ReferenceEquals(FocusManager.GetFocusedElement(XamlRoot), PageBox)) PageBox.Text = (page + 1).ToString();
-        ReaderState.SetLastPage(Document.FilePath, page);
 
         _syncingThumbnailSelection = true;
         ThumbnailList.SelectedIndex = page;

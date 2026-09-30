@@ -18,10 +18,14 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"));
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1280, 900));
+        AppState.Saving += () =>
+        {
+            foreach (var view in DocumentViews()) view.SaveViewState();
+        };
         Closed += (_, _) =>
         {
+            AppState.SaveNow();
             foreach (var view in DocumentViews().ToList()) view.Close();
-            ReaderState.Save();
         };
         UpdateEmptyState();
     }
@@ -91,7 +95,7 @@ public sealed partial class MainWindow : Window
     {
         if (tab.Content is DocumentView view) view.Close();
         Tabs.TabItems.Remove(tab);
-        ReaderState.Save();
+        AppState.RequestSave();
         UpdateEmptyState();
     }
 

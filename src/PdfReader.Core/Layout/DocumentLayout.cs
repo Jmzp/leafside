@@ -69,6 +69,26 @@ public sealed class DocumentLayout
         return Math.Min(index, _rects.Length - 1);
     }
 
+    /// <summary>
+    /// Expresses a vertical content position as a page plus a fraction of that page's height, which stays
+    /// valid across zoom levels and window sizes. Positions in the gap above a page give a small negative fraction.
+    /// </summary>
+    public (int Page, double Fraction) ToPagePosition(double y)
+    {
+        int page = GetPageAt(y);
+        if (page < 0) return (0, 0);
+        var rect = _rects[page];
+        return (page, Math.Clamp((y - rect.Y) / rect.Height, -1, 1));
+    }
+
+    /// <summary>Inverse of <see cref="ToPagePosition"/>; out-of-range pages are clamped.</summary>
+    public double FromPagePosition(int page, double fraction)
+    {
+        if (_rects.Length == 0) return 0;
+        var rect = _rects[Math.Clamp(page, 0, _rects.Length - 1)];
+        return rect.Y + Math.Clamp(fraction, -1, 1) * rect.Height;
+    }
+
     private int FirstPageEndingAfter(double y)
     {
         int lo = 0, hi = _rects.Length;
