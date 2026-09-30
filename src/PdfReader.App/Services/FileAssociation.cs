@@ -23,9 +23,13 @@ public static partial class FileAssociation
         string command = $"\"{exe}\" \"%1\"";
         using var classes = Registry.CurrentUser.CreateSubKey(ClassesKey);
         RemoveLegacy(classes);
+        // "LeafSide – PDF Reader" in "Open with", so people who don't know the name see what it is.
+        string friendlyName = Loc.Get("OpenWithName");
         using (var existing = classes.OpenSubKey($@"{ProgId}\shell\open\command"))
+        using (var existingApp = classes.OpenSubKey(AppKey))
         {
-            if (existing?.GetValue("") as string == command) return; // up to date: touch nothing
+            // Up to date: touch nothing.
+            if (existing?.GetValue("") as string == command && existingApp?.GetValue("FriendlyAppName") as string == friendlyName) return;
         }
 
         using (var prog = classes.CreateSubKey(ProgId))
@@ -39,7 +43,7 @@ public static partial class FileAssociation
             openWith.SetValue(ProgId, Array.Empty<byte>(), RegistryValueKind.None);
         using (var app = classes.CreateSubKey(AppKey))
         {
-            app.SetValue("FriendlyAppName", Loc.Get("AppName"));
+            app.SetValue("FriendlyAppName", friendlyName);
             using (var types = app.CreateSubKey("SupportedTypes")) types.SetValue(".pdf", "");
             using (var open = app.CreateSubKey(@"shell\open\command")) open.SetValue("", command);
         }

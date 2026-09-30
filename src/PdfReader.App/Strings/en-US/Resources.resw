@@ -136,4 +136,5 @@
   <data name="UpdateCheckFailedMessage" xml:space="preserve"><value>GitHub couldn't be reached. Check your internet connection and try again.</value></data>
   <data name="UpdateDownloadFailedTitle" xml:space="preserve"><value>Couldn't download the update</value></data>
   <data name="UpdateDamagedMessage" xml:space="preserve"><value>The downloaded file was damaged, so it was deleted. Try again.</value></data>
+  <data name="OpenWithName" xml:space="preserve"><value>LeafSide – PDF Reader</value></data>
 </root>

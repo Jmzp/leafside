@@ -136,4 +136,5 @@
   <data name="UpdateCheckFailedMessage" xml:space="preserve"><value>No se pudo conectar con GitHub. Revisa tu conexión a internet e inténtalo de nuevo.</value></data>
   <data name="UpdateDownloadFailedTitle" xml:space="preserve"><value>No se pudo descargar la actualización</value></data>
   <data name="UpdateDamagedMessage" xml:space="preserve"><value>El archivo descargado estaba dañado y se eliminó. Inténtalo de nuevo.</value></data>
+  <data name="OpenWithName" xml:space="preserve"><value>LeafSide – Lector de PDF</value></data>
 </root>

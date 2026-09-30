@@ -6,6 +6,7 @@
            Manufacturer="Jorge Zapata"
            Version="$(var.ProductVersion)"
            UpgradeCode="8CC82BAE-5629-4DED-BE91-97E1D4EAD2A3"
+           Codepage="1252"
            Scope="perUser"
            Compressed="yes">
 
@@ -37,7 +38,7 @@
 
     <StandardDirectory Id="ProgramMenuFolder">
       <Component Id="StartMenu">
-        <Shortcut Id="StartMenuShortcut" Name="LeafSide" Description="Fast PDF reader"
+        <Shortcut Id="StartMenuShortcut" Name="LeafSide – PDF Reader" Description="Fast PDF reader"
                   Target="[INSTALLFOLDER]LeafSide.exe" WorkingDirectory="INSTALLFOLDER" />
         <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
         <RegistryValue Root="HKCU" Key="Software\PdfReader" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
@@ -59,7 +60,7 @@
       </RegistryKey>
       <RegistryValue Root="HKCR" Key=".pdf\OpenWithProgids" Name="LeafSide.Document" Type="string" Value="" />
       <RegistryKey Root="HKCR" Key="Applications\LeafSide.exe">
-        <RegistryValue Name="FriendlyAppName" Type="string" Value="LeafSide" />
+        <RegistryValue Name="FriendlyAppName" Type="string" Value="LeafSide – PDF Reader" />
         <RegistryValue Key="SupportedTypes" Name=".pdf" Type="string" Value="" />
         <RegistryValue Key="shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]LeafSide.exe&quot; &quot;%1&quot;" />
       </RegistryKey>
