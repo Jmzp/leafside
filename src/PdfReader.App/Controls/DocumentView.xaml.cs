@@ -35,6 +35,11 @@ public sealed partial class DocumentView : UserControl
         Viewer.ZoomChanged += (_, zoom) => ZoomText.Text = $"{zoom:P0}";
         Viewer.SearchResultsChanged += (_, _) => UpdateSearchResultText();
         Viewer.ViewStateChanged += (_, _) => AppState.RequestSave();
+        Viewer.HistoryChanged += (_, _) => UpdateHistoryButtons();
+        Viewer.ThumbnailsInvalidated += (_, _) => ReloadThumbnails();
+        Viewer.NightMode = AppState.NightMode;
+        NightToggle.IsChecked = AppState.NightMode;
+        AppState.NightModeChanged += OnNightModeChanged;
         Viewer.Open(document, AppState.Store.GetView(document.FilePath));
         AppState.Store.Touch(document.FilePath);
         ZoomText.Text = $"{Viewer.ZoomFactor:P0}";
@@ -69,6 +74,7 @@ public sealed partial class DocumentView : UserControl
     public void Close()
     {
         SaveViewState();
+        AppState.NightModeChanged -= OnNightModeChanged;
         Viewer.Close(); // also disposes the document
     }
 
@@ -112,6 +118,41 @@ public sealed partial class DocumentView : UserControl
         PageBox.Focus(FocusState.Keyboard);
         PageBox.SelectAll();
         e.Handled = true;
+    }
+
+    // --- back / forward
+
+    private void UpdateHistoryButtons()
+    {
+        ForwardButton.IsEnabled = Viewer.CanGoForward;
+        BackButton.IsEnabled = Viewer.CanGoBack;
+    }
+
+    // Focus goes back to the page: the pressed button may just have become disabled.
+    private void OnBack(object sender, RoutedEventArgs e) { Viewer.GoBack(); FocusViewer(); }
+    private void OnForward(object sender, RoutedEventArgs e) { Viewer.GoForward(); FocusViewer(); }
+    private void OnBackAccelerator(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { Viewer.GoBack(); e.Handled = true; }
+    private void OnForwardAccelerator(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs e) { Viewer.GoForward(); e.Handled = true; }
+
+    // --- night mode
+
+    private void OnNightModeClick(object sender, RoutedEventArgs e) => AppState.NightMode = NightToggle.IsChecked == true;
+
+    private void OnNightModeChanged()
+    {
+        NightToggle.IsChecked = AppState.NightMode;
+        Viewer.NightMode = AppState.NightMode;
+    }
+
+    /// <summary>The viewer discarded its thumbnails: ask the visible sidebar items for new ones.</summary>
+    private void ReloadThumbnails()
+    {
+        for (int i = 0; i < ThumbnailList.Items.Count; i++)
+        {
+            if (ThumbnailList.ContainerFromIndex(i) is ListViewItem { ContentTemplateRoot: StackPanel panel } &&
+                panel.Children[0] is ThumbnailView thumb)
+                thumb.Show(Viewer, i);
+        }
     }
 
     // --- zoom

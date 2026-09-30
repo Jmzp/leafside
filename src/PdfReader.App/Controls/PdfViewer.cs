@@ -63,6 +63,12 @@ public sealed partial class PdfViewer : UserControl
     private (double Zoom, double X, double Y)? _restoreTarget;
     private int _restoreAttempts;
 
+    private readonly NavigationHistory _history = new();
+    private bool _nightMode;
+    // Bumped whenever everything must be re-rendered (night mode, GPU device lost) so that renders that were
+    // already running when that happened are dropped instead of attached.
+    private int _renderGeneration;
+
     // Selection
     private readonly record struct TextPosition(int Page, int Char);
     private TextPosition? _selectionAnchor, _selectionFocus;
@@ -119,6 +125,7 @@ public sealed partial class PdfViewer : UserControl
         _panel.PointerMoved += OnPanelPointerMoved;
         _panel.PointerReleased += OnPanelPointerReleased;
         _panel.PointerCaptureLost += (_, _) => _pointerPressed = false;
+        _panel.DoubleTapped += OnPanelDoubleTapped;
         PreviewKeyDown += OnPreviewKeyDown;
         Loaded += (_, _) => { if (XamlRoot is { } root) root.Changed += (_, _) => QueueUpdate(); };
     }
@@ -137,6 +144,26 @@ public sealed partial class PdfViewer : UserControl
     public event EventHandler<double>? ZoomChanged;
     /// <summary>Raised when the reading position or zoom changed (never while a position is being restored).</summary>
     public event EventHandler? ViewStateChanged;
+    /// <summary>Raised when Back/Forward availability may have changed.</summary>
+    public event EventHandler? HistoryChanged;
+    /// <summary>Raised when every thumbnail was discarded (e.g. night mode toggled); the sidebar should reload them.</summary>
+    public event EventHandler? ThumbnailsInvalidated;
+
+    public bool CanGoBack => _history.CanGoBack;
+    public bool CanGoForward => _history.CanGoForward;
+
+    /// <summary>Renders pages with inverted colors, for reading in the dark.</summary>
+    public bool NightMode
+    {
+        get => _nightMode;
+        set
+        {
+            if (_nightMode == value) return;
+            _nightMode = value;
+            foreach (var page in _realized.Values.Concat(_pool)) page.NightMode = value;
+            if (_document is not null) InvalidateRendering();
+        }
+    }
     public event EventHandler? SearchResultsChanged;
     /// <summary>Raised on the UI thread when a page thumbnail becomes available.</summary>
     public event EventHandler<int>? ThumbnailReady;
@@ -177,6 +204,8 @@ public sealed partial class PdfViewer : UserControl
         _pendingInitialView = null;
         _restoreTarget = null;
         _restoreTimeout.Stop();
+        _history.Clear();
+        HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private IReadOnlyList<CompositionDrawingSurface> DrainThumbnails()
@@ -264,6 +293,7 @@ public sealed partial class PdfViewer : UserControl
     public void GoToPage(int pageIndex, bool animate = false)
     {
         if (_layout is null || pageIndex < 0 || pageIndex >= _layout.PageCount) return;
+        RecordJump(new ViewState(pageIndex));
         double zoom = _scroll.ZoomFactor;
         _scroll.ScrollTo(_scroll.HorizontalOffset, Math.Max(0, (_layout.GetPageRect(pageIndex).Y - 8) * zoom),
             new ScrollingScrollOptions(animate ? ScrollingAnimationMode.Auto : ScrollingAnimationMode.Disabled));
@@ -274,11 +304,30 @@ public sealed partial class PdfViewer : UserControl
     {
         if (_layout is null) return;
         var page = _layout.GetPageRect(pageIndex);
+        RecordJump(new ViewState(pageIndex, rect.Top * DocumentLayout.PointsToDip / page.Height));
         double zoom = _scroll.ZoomFactor;
         double cx = (page.X + (rect.Left + rect.Right) / 2 * DocumentLayout.PointsToDip) * zoom;
         double cy = (page.Y + (rect.Top + rect.Bottom) / 2 * DocumentLayout.PointsToDip) * zoom;
         _scroll.ScrollTo(Math.Max(0, cx - _scroll.ViewportWidth / 2), Math.Max(0, cy - _scroll.ViewportHeight / 2),
             new ScrollingScrollOptions(ScrollingAnimationMode.Disabled));
+    }
+
+    /// <summary>Remembers where we are before a jump of more than a page, for Back.</summary>
+    private void RecordJump(ViewState destination)
+    {
+        if (CaptureViewState() is not { } current || !current.IsFarFrom(destination)) return;
+        _history.Push(current);
+        HistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void GoBack() => Navigate(_history.GoBack);
+    public void GoForward() => Navigate(_history.GoForward);
+
+    private void Navigate(Func<ViewState, ViewState?> move)
+    {
+        if (CaptureViewState() is not { } current || move(current) is not { } target) return;
+        RestoreView(target);
+        HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public double FitWidthZoom() =>
@@ -374,10 +423,12 @@ public sealed partial class PdfViewer : UserControl
 
     private void InvalidateRendering()
     {
+        _renderGeneration++;
         foreach (var cts in _inflight.Values) cts.Cancel();
         _inflight.Clear();
         _thumbnailTasks.Clear();
         foreach (var surface in DrainThumbnails()) surface.Dispose();
+        ThumbnailsInvalidated?.Invoke(this, EventArgs.Empty);
         foreach (var page in _realized.Values.ToList())
         {
             int index = page.PageIndex;
@@ -515,7 +566,7 @@ public sealed partial class PdfViewer : UserControl
 
     private PageView CreatePageView()
     {
-        var page = new PageView(_compositor);
+        var page = new PageView(_compositor) { NightMode = _nightMode };
         _panel.Children.Add(page);
         return page;
     }
@@ -530,14 +581,16 @@ public sealed partial class PdfViewer : UserControl
     {
         var document = _document!;
         var surfaces = _surfaces;
+        bool invert = _nightMode;
+        int generation = _renderGeneration;
         try
         {
             var surface = await _scheduler!.Schedule(
-                () => surfaces.CreateSurface(document.Render(key.Page, scale, tile.X, tile.Y, tile.Width, tile.Height)),
+                () => surfaces.CreateSurface(document.Render(key.Page, scale, tile.X, tile.Y, tile.Width, tile.Height), invert),
                 priority, cts.Token);
 
             if (_inflight.TryGetValue(key, out var current) && current == cts) _inflight.Remove(key);
-            if (document == _document && _realized.TryGetValue(key.Page, out var page) && page.AddTile(key.ScaleKey, tile, scale, surface))
+            if (document == _document && generation == _renderGeneration && _realized.TryGetValue(key.Page, out var page) && page.AddTile(key.ScaleKey, tile, scale, surface))
                 QueueUpdate(); // may complete the layer, allowing the previous zoom level to be dropped
             else
                 surface.Dispose();
@@ -606,18 +659,19 @@ public sealed partial class PdfViewer : UserControl
         var size = document.GetPageSize(pageIndex);
         double scale = ThumbnailWidthPx / size.Width;
         var (w, h) = TilePlanner.ScaledSize(size.Width, size.Height, scale);
-        var task = _scheduler!.Schedule(() => surfaces.CreateSurface(document.Render(pageIndex, scale, 0, 0, w, h)), priority, token);
+        bool invert = _nightMode;
+        var task = _scheduler!.Schedule(() => surfaces.CreateSurface(document.Render(pageIndex, scale, 0, 0, w, h), invert), priority, token);
         _thumbnailTasks[pageIndex] = task;
-        _ = CompleteThumbnailAsync(pageIndex, document, task, (long)w * h * 4);
+        _ = CompleteThumbnailAsync(pageIndex, document, _renderGeneration, task, (long)w * h * 4);
         return task;
     }
 
-    private async Task CompleteThumbnailAsync(int pageIndex, IPdfDocument document, Task<CompositionDrawingSurface> task, long bytes)
+    private async Task CompleteThumbnailAsync(int pageIndex, IPdfDocument document, int generation, Task<CompositionDrawingSurface> task, long bytes)
     {
         try
         {
             var surface = await task;
-            if (document != _document) { surface.Dispose(); return; }
+            if (document != _document || generation != _renderGeneration) { surface.Dispose(); return; }
             // Evicted thumbnails are not disposed explicitly: a sidebar item may still show one; GC reclaims them.
             _thumbnails.Add(pageIndex, surface, bytes);
             if (_realized.TryGetValue(pageIndex, out var page) && !page.HasThumbnail) page.SetThumbnail(surface);
@@ -650,6 +704,14 @@ public sealed partial class PdfViewer : UserControl
         // Touch pans and zooms; mouse and pen select text.
         if (_layout is null || e.Pointer.PointerDeviceType == PointerDeviceType.Touch) return;
         var point = e.GetCurrentPoint(_panel);
+        if (point.Properties.IsXButton1Pressed || point.Properties.IsXButton2Pressed)
+        {
+            // Mouse back/forward buttons.
+            if (point.Properties.IsXButton1Pressed) GoBack();
+            else GoForward();
+            e.Handled = true;
+            return;
+        }
         if (!point.Properties.IsLeftButtonPressed) return;
 
         _pointerPressed = true;
@@ -685,6 +747,17 @@ public sealed partial class PdfViewer : UserControl
             var (page, x, y) = ToPagePoint(_pressPoint, clampToNearest: false);
             if (page >= 0) _ = FollowLinkAsync(page, x, y);
         }
+    }
+
+    /// <summary>Double tap / double click: toggles between fit width and twice that, centered on the point.</summary>
+    private void OnPanelDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        if (_layout is null) return;
+        e.Handled = true;
+        double fit = FitWidthZoom();
+        double target = Math.Abs(_scroll.ZoomFactor - fit) < 0.02 ? Math.Min(fit * 2, MaxZoom) : fit;
+        var point = e.GetPosition(_scroll);
+        _scroll.ZoomTo((float)target, new Vector2((float)point.X, (float)point.Y), new ScrollingZoomOptions(ScrollingAnimationMode.Auto));
     }
 
     private async Task FollowLinkAsync(int page, double x, double y)

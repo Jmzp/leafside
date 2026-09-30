@@ -12,6 +12,8 @@
         <KeyboardAccelerator Modifiers="Control" Key="Subtract" Invoked="OnZoomOutAccelerator" />
         <KeyboardAccelerator Modifiers="Control" Key="Number0" Invoked="OnFitWidthAccelerator" />
         <KeyboardAccelerator Modifiers="Control" Key="G" Invoked="OnGoToPageAccelerator" />
+        <KeyboardAccelerator Modifiers="Menu" Key="Left" Invoked="OnBackAccelerator" />
+        <KeyboardAccelerator Modifiers="Menu" Key="Right" Invoked="OnForwardAccelerator" />
     </UserControl.KeyboardAccelerators>
 
     <Grid>
@@ -34,6 +36,14 @@
                               Checked="OnSidebarToggled" Unchecked="OnSidebarToggled" Padding="8,6">
                     <FontIcon Glyph="&#xE700;" FontSize="16" />
                 </ToggleButton>
+                <Button x:Name="BackButton" Click="OnBack" IsEnabled="False" AutomationProperties.Name="Atrás"
+                        ToolTipService.ToolTip="Atrás (Alt+←)" Padding="8,6">
+                    <FontIcon Glyph="&#xE72B;" FontSize="16" />
+                </Button>
+                <Button x:Name="ForwardButton" Click="OnForward" IsEnabled="False" AutomationProperties.Name="Adelante"
+                        ToolTipService.ToolTip="Adelante (Alt+→)" Padding="8,6">
+                    <FontIcon Glyph="&#xE72A;" FontSize="16" />
+                </Button>
                 <AppBarSeparator />
                 <TextBox x:Name="PageBox" Width="64" TextAlignment="Center" KeyDown="OnPageBoxKeyDown"
                          LostFocus="OnPageBoxLostFocus" ToolTipService.ToolTip="Ir a la página (Ctrl+G)" />
@@ -53,6 +63,10 @@
                     <FontIcon Glyph="&#xE9A8;" FontSize="16" />
                 </Button>
                 <AppBarSeparator />
+                <ToggleButton x:Name="NightToggle" Click="OnNightModeClick" AutomationProperties.Name="Modo noche"
+                              ToolTipService.ToolTip="Modo noche" Padding="8,6">
+                    <FontIcon Glyph="&#xE708;" FontSize="16" />
+                </ToggleButton>
                 <Button Click="OnFullScreen" AutomationProperties.Name="Pantalla completa" ToolTipService.ToolTip="Pantalla completa (F11)" Padding="8,6">
                     <FontIcon Glyph="&#xE740;" FontSize="16" />
                 </Button>

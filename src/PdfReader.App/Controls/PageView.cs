@@ -30,6 +30,9 @@ public sealed class PageView : Grid
 
     private static readonly Brush SelectionBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(90, 0, 120, 215));
     private static readonly Brush MatchBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(110, 255, 214, 0));
+    // Shown until the first bitmap arrives; dark in night mode so pages do not flash white.
+    private static readonly Brush DayBackground = new SolidColorBrush(Colors.White);
+    private static readonly Brush NightBackground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 32, 32, 32));
     private static readonly Brush CurrentMatchBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(150, 255, 120, 0));
 
     private sealed class Layer(ContainerVisual visual, int scaleKey)
@@ -50,7 +53,7 @@ public sealed class PageView : Grid
     public PageView(Compositor compositor)
     {
         _compositor = compositor;
-        Background = new SolidColorBrush(Colors.White);
+        Background = DayBackground;
         BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(40, 0, 0, 0));
         BorderThickness = new Thickness(0.5);
 
@@ -62,6 +65,12 @@ public sealed class PageView : Grid
         _base = compositor.CreateSpriteVisual();
         _root.Children.InsertAtBottom(_base);
         ElementCompositionPreview.SetElementChildVisual(host, _root);
+    }
+
+    public bool NightMode
+    {
+        get => Background == NightBackground;
+        set => Background = value ? NightBackground : DayBackground;
     }
 
     public int PageIndex { get; private set; } = -1;

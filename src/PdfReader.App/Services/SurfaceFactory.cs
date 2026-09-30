@@ -2,6 +2,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Composition;
 using Microsoft.UI.Composition;
 using PdfReader.Core.Engine;
+using PdfReader.Core.Rendering;
 using Windows.Foundation;
 using Windows.Graphics.DirectX;
 
@@ -33,8 +34,10 @@ public sealed class SurfaceFactory
     /// <summary>Raised when the GPU device was lost and recreated; every surface must be rendered again.</summary>
     public event EventHandler? DeviceReplaced;
 
-    public CompositionDrawingSurface CreateSurface(RenderedBitmap bitmap)
+    /// <param name="invert">Night mode: invert the colors first (cheap, and still off the UI thread).</param>
+    public CompositionDrawingSurface CreateSurface(RenderedBitmap bitmap, bool invert = false)
     {
+        if (invert) PixelOps.InvertBgr(bitmap.Pixels);
         var surface = _graphicsDevice.CreateDrawingSurface(
             new Size(bitmap.Width, bitmap.Height), Microsoft.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized,
             Microsoft.Graphics.DirectX.DirectXAlphaMode.Premultiplied);

@@ -21,6 +21,22 @@ public static class AppState
 
     private static DispatcherQueueTimer? _saveTimer;
 
+    /// <summary>Raised on the UI thread when <see cref="NightMode"/> changes.</summary>
+    public static event Action? NightModeChanged;
+
+    /// <summary>Global setting shared by every open document.</summary>
+    public static bool NightMode
+    {
+        get => Store.Settings.NightMode;
+        set
+        {
+            if (Store.Settings.NightMode == value) return;
+            Store.Settings.NightMode = value;
+            RequestSave();
+            NightModeChanged?.Invoke();
+        }
+    }
+
     /// <summary>Schedules a save (at most one every couple of seconds). Call on the UI thread.</summary>
     public static void RequestSave()
     {
