@@ -1,0 +1,29 @@
+LECTOR PDF para Windows (x64 y ARM64)
+https://github.com/Jmzp/winui-pdf-reader
+
+COMO EMPEZAR
+1. Descomprime TODO el ZIP en una carpeta (por ejemplo Documentos\PdfReader).
+   No lo ejecutes desde dentro del ZIP.
+2. Abre la carpeta y haz doble clic en PdfReader.exe.
+3. Si aparece "Windows protegio su PC": clic en "Mas informacion" > "Ejecutar de todas formas".
+   (Sale porque la app no esta firmada digitalmente.)
+4. Abre un PDF con el boton, con Ctrl+O o arrastrandolo a la ventana.
+
+ABRIR PDFs DESDE EL EXPLORADOR
+- Al abrirse, la app se anade a "Abrir con" para los .pdf (solo para tu usuario, sin administrador).
+- Clic derecho en un PDF > Abrir con > Elegir otra aplicacion > Lector PDF > "Siempre".
+- Si mueves la carpeta, abre PdfReader.exe una vez para que se actualice.
+- Para quitarlo: ejecuta  PdfReader.exe --unregister
+
+ATAJOS
+  Ctrl+O abrir            Ctrl+W cerrar pestana    Ctrl+F buscar        F3 / Mayus+F3 siguiente / anterior
+  Ctrl+G ir a pagina      Ctrl+P imprimir          Ctrl+0 ajustar al ancho   Ctrl+ / Ctrl- zoom
+  F11 pantalla completa (Esc)   Alt+Izquierda / Alt+Derecha atras / adelante
+  Doble toque o doble clic: acercar / volver al ancho
+
+La app recuerda la pagina, el zoom y las pestanas abiertas (en %LocalAppData%\PdfReader).
+La interfaz se muestra en espanol si Windows esta en espanol; si no, en ingles.
+
+PRUEBA DE FLUIDEZ (opcional)
+Arrastra un PDF sobre Benchmark.bat. Hace scroll automatico unos segundos (no toques la ventana)
+y muestra los tiempos de frame. Tambien queda en %LocalAppData%\PdfReader\bench.log

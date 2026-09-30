@@ -44,6 +44,13 @@
     <None Include="..\native\pdfium\$(PdfiumArch)\bin\pdfium.dll" Link="pdfium.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Shipped next to the exe in published builds: instructions, benchmark helper, third-party licenses. -->
+  <ItemGroup>
+    <None Include="..\..\packaging\*" LinkBase="." CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\native\pdfium\$(PdfiumArch)\LICENSE" Link="licenses\pdfium\LICENSE" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\native\pdfium\$(PdfiumArch)\licenses\*" LinkBase="licenses\pdfium" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Unpackaged publish omits the app's compiled XAML (*.xbf) and resource index (.pri); without them the
        window fails to load. Copy them from the build output. -->
   <Target Name="CopyXamlResourcesToPublishDir" AfterTargets="Publish">

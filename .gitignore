@@ -6,3 +6,5 @@ AppPackages/
 BundleArtifacts/
 TestResults/
 publish/
+
+artifacts/
