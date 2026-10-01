@@ -15,7 +15,9 @@ Highlight, take notes, search and print — without lag, without ads, without an
 ![Windows 10/11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 ![ARM64 and x64](https://img.shields.io/badge/arch-ARM64%20%7C%20x64-5C2D91)
 
-**[⬇️ Download the latest version](https://github.com/Jmzp/leafside/releases/latest)**
+**[⬇️ Download the latest version](https://github.com/Jmzp/leafside/releases/latest)** ·
+**[📖 User guide (PDF)](docs/manual/LeafSide-User-Guide-EN.pdf)** ·
+**[Manual en español (PDF)](docs/manual/LeafSide-Manual-ES.pdf)**
 
 </div>
 
@@ -120,6 +122,14 @@ Neither needs the .NET runtime. The app isn't code-signed yet, so SmartScreen ma
 *More info → Run anyway*.
 
 Requires Windows 10 version 2004 (build 19041) or later; Windows 11 recommended.
+
+## 📖 User guide
+
+New to LeafSide? The illustrated guide covers installing, the toolbar, highlights and notes, night mode, printing,
+updates and shortcuts, in a few pages that are easy to share:
+
+- [LeafSide User Guide (English, PDF)](docs/manual/LeafSide-User-Guide-EN.pdf)
+- [Manual de uso de LeafSide (español, PDF)](docs/manual/LeafSide-Manual-ES.pdf)
 
 ## ⌨️ Keyboard shortcuts
 
